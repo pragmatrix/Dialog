@@ -12,6 +12,7 @@ module iOS =
     let buttonWriter = 
         PropertyWriter.empty<UIButton>
         |+ fun b (Text t) -> b.SetTitle(t, UIControlState.Normal)
+        |+ fun b (OnClick (c, e)) -> ()
 
     let labelWriter = 
         PropertyWriter.empty<UILabel>
@@ -44,8 +45,6 @@ module iOS =
         Registry.register "Button" createButton
         Registry.register "Text" createLabel
         Registry.register "View" createView
-
-    registerResources()
 
     let renderToController element (target : UIViewController) =
         if target.IsViewLoaded then

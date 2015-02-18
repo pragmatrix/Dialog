@@ -16,9 +16,10 @@ type AppDelegate () =
 
     let window = new UIWindow (UIScreen.MainScreen.Bounds)
 
-    // This method is invoked when the application is ready to run.
     override this.FinishedLaunching (app, options) =
-        // If you have defined a root view controller, set it here:
+
+        // can't make static initialization of F# modules work.       
+        registerResources()
 
         let controller = new RootViewController();
         renderToController (element counter []) controller

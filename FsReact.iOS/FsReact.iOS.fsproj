@@ -83,10 +83,10 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Props.fs" />
     <Compile Include="PropertyWriter.fs" />
-    <Compile Include="FsReact.fs" />
+    <Compile Include="Core.fs" />
     <Compile Include="Resources.fs" />
-    <Compile Include="FsReactUI.fs" />
-    <Compile Include="FsReactiOS.fs" />
+    <Compile Include="UI.fs" />
+    <Compile Include="iOS.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
