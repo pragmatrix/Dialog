@@ -1,9 +1,8 @@
-module FsReact
+namespace FsReact
 
 // May contain duplicates, first one wins
 
 type Properties = obj list
-type Props = Props.Props
 
 type ElementKind = 
     | Component of ComponentClass
@@ -20,7 +19,7 @@ and ComponentClass =
 type Component<'event, 'state> =
     {
         _class : ComponentClass<'event, 'state>
-        props : Props;
+        props : Props.Props;
         state : 'state;
     } 
     interface Component with
@@ -44,8 +43,9 @@ and ComponentClass<'event, 'state> =
                 |> Props.apply props
             { _class = this; props = props; state = state } :> _
 
-type React = 
-    static member createClass<'event, 'state>(getInitialState, handleChange, render) : ComponentClass<'event, 'state> = 
+module Core =
+
+    let createClass<'event, 'state>(getInitialState, handleChange, render) : ComponentClass<'event, 'state> = 
         { 
             getInitialState = getInitialState;
             getDefaultProps = fun () -> [];
@@ -53,5 +53,5 @@ type React =
             render = render;
         }
 
-let element c p = { kind = Component c; props = p }
-let native name p = { kind = Native name; props = p }
+    let element c p = { kind = Component c; props = p }
+    let native name p = { kind = Native name; props = p }

@@ -1,7 +1,7 @@
-﻿module FsReactiOS
+﻿namespace FsReact
 
 open FsReact
-open FsReactUI
+open FsReact.UI
 open UIKit
 open Facebook.CSSLayout
 open Resources
@@ -40,25 +40,28 @@ module iOS =
         labelWriter.write label props
         createResource label labelWriter viewDisposer
 
-    Registry.register "Button" createButton
-    Registry.register "Text" createLabel
-    Registry.register "View" createView
+    let registerResources() =
+        Registry.register "Button" createButton
+        Registry.register "Text" createLabel
+        Registry.register "View" createView
 
-let renderToController element (target : UIViewController) =
-    if target.IsViewLoaded then
-        failwith "React can only render to an UIViewController that has no view yet."
+    registerResources()
 
-    let mounted = mountRoot element
-    let topPresenter = resolveTopPresenter mounted
-    target.View <- topPresenter.resource.instance :?> UIView
+    let renderToController element (target : UIViewController) =
+        if target.IsViewLoaded then
+            failwith "React can only render to an UIViewController that has no view yet."
 
-let renderToView element (target : UIView) = 
-    if (target.Subviews.Length <> 0) then
-        failwith "React.render can only render to an UIView with no subviews"
+        let mounted = UI.mountRoot element
+        let topPresenter = UI.resolveTopPresenter mounted
+        target.View <- topPresenter.resource.instance :?> UIView
 
-    let mounted = mountRoot element
-    let topPresenter = resolveTopPresenter mounted
-    target.AddSubview(topPresenter.resource.instance :?> UIView)
+    let renderToView element (target : UIView) = 
+        if (target.Subviews.Length <> 0) then
+            failwith "React.render can only render to an UIView with no subviews"
+
+        let mounted = UI.mountRoot element
+        let topPresenter = UI.resolveTopPresenter mounted
+        target.AddSubview(topPresenter.resource.instance :?> UIView)
 
 
 

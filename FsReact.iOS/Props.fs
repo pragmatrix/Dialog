@@ -1,35 +1,37 @@
-﻿module Props
+﻿namespace FsReact
 
-type Props = Map<string, obj>
-type Properties = obj list
+module Props =
 
-let empty : Props = Map.empty
+    type Props = Map<string, obj>
+    type Properties = obj list
 
-let private key (prop:'t) = typedefof<'t>.Name
+    let empty : Props = Map.empty
 
-let apply (newProps : Properties) props = 
-    let applyOne (props : Props) prop = 
-        props.Add(key prop, prop)
+    let private key (prop:'t) = typedefof<'t>.Name
 
-    newProps
-    |> List.fold applyOne props
+    let apply (newProps : Properties) props = 
+        let applyOne (props : Props) prop = 
+            props.Add(key prop, prop)
 
-let ofList props = empty |> apply props
+        newProps
+        |> List.fold applyOne props
 
-let tryGet (f : 'property -> 'value) (props:Props) = 
-    let key = typedefof<'property>.Name
-    match Map.tryFind key props with
-    | Some v -> Some (f (v :?> 'property))
-    | None -> None
+    let ofList props = empty |> apply props
 
-let tryGetOr (f : 'property -> 'value) alt props = 
-    match tryGet f props with
-    | Some p -> p
-    | None -> alt
+    let tryGet (f : 'property -> 'value) (props:Props) = 
+        let key = typedefof<'property>.Name
+        match Map.tryFind key props with
+        | Some v -> Some (f (v :?> 'property))
+        | None -> None
 
-let get (f: 'property -> 'value) props = 
-    match tryGet f props with
-    | Some p -> p
-    | None -> failwithf "Property %A not found" (typedefof<'property>.Name)
+    let tryGetOr (f : 'property -> 'value) alt props = 
+        match tryGet f props with
+        | Some p -> p
+        | None -> alt
 
-let concat (a:Properties) b = a @ b
+    let get (f: 'property -> 'value) props = 
+        match tryGet f props with
+        | Some p -> p
+        | None -> failwithf "Property %A not found" (typedefof<'property>.Name)
+
+    let concat (a:Properties) b = a @ b

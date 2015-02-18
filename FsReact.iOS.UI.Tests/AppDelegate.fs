@@ -4,8 +4,9 @@ open System
 open UIKit
 open Foundation
 
-open FsReactiOS
-open FsReact
+open FsReact.iOS
+open FsReact.Core
+open FsReact.UI
 
 open ComponentTests
 

@@ -1,32 +1,34 @@
-﻿module Resources
+﻿namespace FsReact
 
-open FsReact
-open PropertyWriter
-open System
+module Resources =
 
-type Resource =
-    inherit IDisposable
-    abstract update : Properties -> unit
-    abstract instance : obj
+    open FsReact
+    open PropertyWriter
+    open System
 
-type Resource<'resource>(instance: 'resource, writer: PropertyWriter<'resource>, disposer: 'resource -> unit) =
-    class end
-    with 
-    interface Resource
-        with
-        member this.instance = instance :> obj
-        member this.update props = writer.write instance props
-        member this.Dispose() = disposer instance
+    type Resource =
+        inherit IDisposable
+        abstract update : Properties -> unit
+        abstract instance : obj
 
-let createResource instance writer disposer = new Resource<_>(instance, writer, disposer)
+    type Resource<'resource>(instance: 'resource, writer: PropertyWriter<'resource>, disposer: 'resource -> unit) =
+        class end
+        with 
+        interface Resource
+            with
+            member this.instance = instance :> obj
+            member this.update props = writer.write instance props
+            member this.Dispose() = disposer instance
 
-let mutable private registry = Map.empty
+    let createResource instance writer disposer = new Resource<_>(instance, writer, disposer)
 
-module Registry =
+    let mutable private registry = Map.empty
 
-    let register (name:string) (f: Properties -> Resource<'resource>) = 
-        let f p = f p :> Resource
-        registry <- registry.Add(name, f)
+    module Registry =
 
-    let createResource name props =
-        registry.[name] props
+        let register (name:string) (f: Properties -> Resource<'resource>) = 
+            let f p = f p :> Resource
+            registry <- registry.Add(name, f)
+
+        let createResource name props =
+            registry.[name] props

@@ -1,4 +1,4 @@
-﻿module PropertyWriter
+﻿namespace FsReact
 
 type PropertyWriter<'target> = { map: Map<string, 'target -> obj -> unit> }
     with 
@@ -25,4 +25,6 @@ type PropertyWriter<'target> = { map: Map<string, 'target -> obj -> unit> }
             |> Map.map (fun _ f -> (fun (d:'derived) p -> f (d :> obj :?> 'target) p))
         { map = dMap }
 
-let empty<'target> : PropertyWriter<'target> = { map = Map.empty }
+module PropertyWriter =
+
+    let empty<'target> : PropertyWriter<'target> = { map = Map.empty }

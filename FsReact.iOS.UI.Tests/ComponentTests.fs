@@ -1,7 +1,7 @@
 ﻿module ComponentTests
 
 open FsReact
-open FsReactUI
+open FsReact.UI
 
 type CounterEvents = | ButtonClicked
 type CounterState = { count: int }
@@ -27,5 +27,5 @@ let counter =
         button "Click to count" (this, ButtonClicked) [];
 
 
-    React.createClass(getInitialState, handleChange, render);
+    Core.createClass(getInitialState, handleChange, render);
 
