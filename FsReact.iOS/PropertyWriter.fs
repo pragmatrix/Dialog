@@ -4,70 +4,79 @@
     Defines property modification functions for a specific target
 
 
-    |+ provides an "add" function, which is called when a property is set the first time, or updated if no |* function is set
-    |* provides an "update" function, which is called whenver the property is changed
-    |- provides a "remove" fucntion, which is called whenever the property is removed (overwrites |.)
-
-    |. provides a default property that is set when the property is removed (overwrites |-)
-
+    |. provides a default property and a setter. The setter is used to mount and update a property and the
+        default property is set when it is removed.
+    |+ provides an "add" function, which is called when a property is mounted and returns
+        a remove function. Updates are processed by removing and adding.
+    |* provides an "add" function, which is called when a property is set the first time
+        and returns an update and remove function.
+        
     todo:
         - use Dictionaries instead of maps for performance
-        - pre-build updateMap so that it contains also the adders
-        - swap target obj signature, so that we specialize over properties?
         - we might need readers to read out properties directly from the components, PropertyWriter should be
           then renamed to PropertyAccessor?
         - default values should also be set when the target is instantiated.
 *)
 
+type MountedProperty<'target> = 
+    abstract update: (obj -> unit) option
+    abstract remove: unit -> unit
+
+type MountedProperty<'target, 'property> = { update: ('property -> unit) option; remove: unit -> unit }
+    with
+    interface MountedProperty<'target> with
+        member this.update =
+            this.update
+            |> Option.map(fun f -> fun p -> f (p :?> 'property))
+
+        member this.remove() = this.remove()
+
 type PropertyWriter<'target> = 
     { 
-        addMap: Map<string, 'target -> obj -> unit>;
-        updateMap: Map<string, 'target -> obj -> unit>;
-        removeMap: Map<string, 'target -> obj -> unit>;
+        map: Map<string, 'target -> obj -> MountedProperty<'target> >;
     }
     with 
         
-    static member (|+) (l: PropertyWriter<'target>, f: 'target -> 'property -> unit) = 
+    static member (|*) (l: PropertyWriter<'target>, f: 'target -> 'property -> ('property -> unit) * (unit -> unit)) = 
         let name = typedefof<'property>.Name
         let adder target (property:obj) = 
             let p = property :?> 'property 
-            f target p
-        { l with addMap = l.addMap.Add(name, adder) }
+            let (u, r) = f target p
+            
+            {
+                update = Some u
+                remove = r
+            } 
+            :> MountedProperty<_>
 
-    static member (|*) (l: PropertyWriter<'target>, f: 'target -> 'property -> unit) = 
+        { l with map = l.map.Add(name, adder) }
+
+    static member (|+) (l: PropertyWriter<'target>, f: 'target -> 'property -> (unit -> unit)) = 
         let name = typedefof<'property>.Name
-        let updater target (property:obj) = 
+        let adder target (property:obj) = 
             let p = property :?> 'property 
-            f target p
-        { l with updateMap = l.updateMap.Add(name, updater) }
-    
-    static member (|-) (l: PropertyWriter<'target>, f: 'target -> 'property -> unit) = 
-        let name = typedefof<'property>.Name
-        let remover target (property:obj) = 
-            let p = property :?> 'property 
-            f target p
-        { l with removeMap = l.removeMap.Add(name, remover) }
+            let r = f target p
+            {
+                update = None
+                remove = r
+            } 
+            :> MountedProperty<_>
 
-    static member (|.) (l: PropertyWriter<'target>, f: 'target -> 'property) = 
-        let fx t _ = 
-            let newP = f t
-            l.update t (newP :> obj)
-        l |- fx
+        { l with map = l.map.Add(name, adder) }
 
-    member this.add target property =
+    static member (|.) (l: PropertyWriter<'target>, arg : 'property * ('target -> 'property -> unit)) = 
+        let def, setter = arg
+        l
+        |* fun t p ->
+            let set = setter t
+            set p
+            let update p = set p
+            let remove() = set def
+            update, remove
+
+    member this.mount target property =
         let name = property.GetType().Name
-        this.addMap.[name] target property
-
-    member this.update target property =
-        let name = property.GetType().Name
-        match this.updateMap.TryFind name with
-        | Some updater -> updater target property
-        | None ->
-        this.addMap.[name] target property
-
-    member this.remove target property = 
-        let name = property.GetType().Name
-        this.removeMap.[name] target property
+        this.map.[name] target property
 
 (*
     member this.derived() : PropertyWriter<'derived> = 
@@ -79,4 +88,4 @@ type PropertyWriter<'target> =
 
 module PropertyWriter =
 
-    let empty<'target> : PropertyWriter<'target> = { addMap = Map.empty; updateMap = Map.empty; removeMap = Map.empty }
+    let empty<'target> : PropertyWriter<'target> = { map = Map.empty }

@@ -11,19 +11,16 @@ module iOS =
 
     let buttonWriter = 
         PropertyWriter.empty<UIButton>
-        |. fun b -> Text ""
-        |+ fun b (Text t) -> b.SetTitle(t, UIControlState.Normal)
-        |+ fun b (OnClick (c, e)) -> ()
-        (*
-            let eh = new EventHandler(fun x -> Core.scheduleEvent(c, e)) 
-            b.TouchDown.AddHandler(eh)
-            fun () ->
-                b.TouchDown.RemoveHandler(eh)
-        *)
+        |. (Text "", fun b (Text t) -> b.SetTitle(t, UIControlState.Normal))
+        
+        |+ fun b (OnClick (c, e)) -> 
+            let handler = EventHandler(fun o ea -> ())
+            b.TouchDown.AddHandler handler
+            fun () -> b.TouchDown.RemoveHandler handler
 
     let labelWriter = 
         PropertyWriter.empty<UILabel>
-        |+ fun l (Text t) -> l.Text <- t
+        |. (Text "", fun l (Text t) -> l.Text <- t)
 
     let viewWriter = 
         PropertyWriter.empty<UIView>
@@ -33,17 +30,17 @@ module iOS =
         v.RemoveFromSuperview()
         v.Dispose()
 
-    let createView = 
+    let createView props = 
         let view = new UIView()
-        createResource viewWriter viewDisposer view
+        createResource viewWriter viewDisposer view props
         
-    let createButton = 
+    let createButton props = 
         let button = UIButton.FromType(UIButtonType.System)
-        createResource buttonWriter viewDisposer button
+        createResource buttonWriter viewDisposer button props
 
-    let createLabel =
+    let createLabel props =
         let label = new UILabel()
-        createResource labelWriter viewDisposer label
+        createResource labelWriter viewDisposer label props
 
     let registerResources() =
         Registry.register "Button" createButton
