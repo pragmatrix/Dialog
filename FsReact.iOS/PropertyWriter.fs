@@ -3,18 +3,20 @@
 (* 
     Defines property modification functions for a specific target
 
+
     |+ provides an "add" function, which is called when a property is set the first time, or updated if no |* function is set
     |* provides an "update" function, which is called whenver the property is changed
-    |- provides a "remove" fucntion, which is called whenever the property is removed
+    |- provides a "remove" fucntion, which is called whenever the property is removed (overwrites |.)
+
+    |. provides a default property that is set when the property is removed (overwrites |-)
 
     todo:
         - use Dictionaries instead of maps for performance
         - pre-build updateMap so that it contains also the adders
         - swap target obj signature, so that we specialize over properties?
-        - add a |- operator that just expects a function that returns another property, which will be set
-          to the update function to remove the property. (or allow independent specification of default values?)
         - we might need readers to read out properties directly from the components, PropertyWriter should be
           then renamed to PropertyAccessor?
+        - default values should also be set when the target is instantiated.
 *)
 
 type PropertyWriter<'target> = 
@@ -24,7 +26,7 @@ type PropertyWriter<'target> =
         removeMap: Map<string, 'target -> obj -> unit>;
     }
     with 
-
+        
     static member (|+) (l: PropertyWriter<'target>, f: 'target -> 'property -> unit) = 
         let name = typedefof<'property>.Name
         let adder target (property:obj) = 
@@ -46,6 +48,11 @@ type PropertyWriter<'target> =
             f target p
         { l with removeMap = l.removeMap.Add(name, remover) }
 
+    static member (|.) (l: PropertyWriter<'target>, f: 'target -> 'property) = 
+        let fx t _ = 
+            let newP = f t
+            l.update t (newP :> obj)
+        l |- fx
 
     member this.add target property =
         let name = property.GetType().Name
