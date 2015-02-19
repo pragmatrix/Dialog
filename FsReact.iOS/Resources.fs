@@ -12,15 +12,16 @@ module Resources =
         abstract instance : obj
 
     type Resource<'resource>(instance: 'resource, writer: PropertyWriter<'resource>, disposer: 'resource -> unit) =
-        class end
-        with 
-        interface Resource
-            with
+        let reconciler = PropertyReconciler<'resource>(writer, instance)
+        interface Resource with
             member this.instance = instance :> obj
-            member this.update props = writer.write instance props
+            member this.update props = reconciler.update props
             member this.Dispose() = disposer instance
 
-    let createResource instance writer disposer = new Resource<_>(instance, writer, disposer)
+    let createResource writer disposer instance initialProps = 
+        let r = new Resource<_>(instance, writer, disposer)
+        (r :> Resource).update initialProps
+        r
 
     let mutable private registry = Map.empty
 

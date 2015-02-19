@@ -83,6 +83,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Props.fs" />
     <Compile Include="PropertyWriter.fs" />
+    <Compile Include="PropertyReconciler.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Resources.fs" />
     <Compile Include="UI.fs" />
