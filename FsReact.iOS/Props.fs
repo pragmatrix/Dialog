@@ -17,6 +17,7 @@ module Props =
         |> List.fold applyOne props
 
     let ofList props = empty |> apply props
+    let toList (props : Props) = props |> Map.toSeq |> Seq.map snd |> Seq.toList
 
     let tryGet (f : 'property -> 'value) (props:Props) = 
         let key = typedefof<'property>.Name
@@ -35,3 +36,17 @@ module Props =
         | None -> failwithf "Property %A not found" (typedefof<'property>.Name)
 
     let concat (a:Properties) b = a @ b
+
+    let tryGetFromList (f: 'property -> 'value) (props: Properties) =
+        let rec tg (props : Properties) = 
+            match props with
+            | [] -> None
+            | x::xs ->
+            match x with
+            | :? 'property as p -> f p |> Some
+            | _ -> tg xs
+
+        tg props
+
+
+                 

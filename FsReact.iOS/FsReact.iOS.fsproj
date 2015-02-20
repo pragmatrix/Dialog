@@ -82,6 +82,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Props.fs" />
+    <Compile Include="Reconciler.fs" />
     <Compile Include="PropertyWriter.fs" />
     <Compile Include="PropertyReconciler.fs" />
     <Compile Include="Core.fs" />

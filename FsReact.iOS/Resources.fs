@@ -3,7 +3,6 @@
 module Resources =
 
     open FsReact
-    open PropertyWriter
     open System
 
     type Resource =
@@ -14,9 +13,9 @@ module Resources =
     type Resource<'resource>(instance: 'resource, writer: PropertyWriter<'resource>, disposer: 'resource -> unit) =
         let reconciler = PropertyReconciler<'resource>(writer, instance)
         interface Resource with
-            member this.instance = instance :> obj
-            member this.update props = reconciler.update props
-            member this.Dispose() = disposer instance
+            member __.instance = instance :> obj
+            member __.update props = reconciler.update props
+            member __.Dispose() = disposer instance
 
     let createResource writer disposer instance initialProps = 
         let r = new Resource<_>(instance, writer, disposer)

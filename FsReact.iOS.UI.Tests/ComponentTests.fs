@@ -24,7 +24,7 @@ let counter =
         ] []
         *)
 
-        button "Click to count" (this, ButtonClicked) [];
+        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
 
 
     Core.createClass(getInitialState, handleChange, render);

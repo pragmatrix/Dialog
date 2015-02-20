@@ -1,46 +1,6 @@
 ﻿namespace FsReact
 
-open System.Collections.Generic
-
-type Dict<'k, 'v> = Dictionary<'k, 'v>
-
-
-(* 
-    A key-based dictionary reconciler.
-
-    todo:
-        - support actual partial specification of reconcile functions.
-        - call update only if the value has changed?
-*)
-
-[<AutoOpen>]
-module Reconciler =
-
-    type ReconcileFunctions<'k, 'v> = 
-        { 
-            add: 'k -> 'v -> unit; 
-            update: 'k -> 'v -> unit; 
-            remove : 'k -> 'v -> unit 
-        }
-
-    let reconcile (functions: ReconcileFunctions<'k, 'v>) (cur: Dict<'k, 'v>) (next: ('k * 'v) list) : Dict<'k, 'v> = 
-        let r = Dict<'k, 'v>(cur.Count)
-        for k,v in next do
-            match cur.TryGetValue k with
-            | (true, v) -> 
-                functions.update k v
-                r.Add (k, v)
-            | (false, _) ->
-                functions.add k v 
-                r.Add (k, v)
-
-        for kv in cur do
-            let k = kv.Key
-            match r.TryGetValue k |> fst with
-            | false -> functions.remove k kv.Value
-            | _ -> ()
-
-        r
+open Reconciler
 
 (*
     A property reconcilder that 
@@ -56,34 +16,30 @@ module Reconciler =
 
 type PropertyReconciler<'target>(writer : PropertyWriter<'target>, target : 'target) = 
 
-    let mutable _values = Dict<string, obj>()
-    let _properties = Dict<string, MountedProperty<'target>>()
+    let mutable _properties = Dict<string, MountedProperty<'target>>()
     
     let reconcile = 
         let functions = 
             {
-                add = fun k v -> 
-                    let mounted = writer.mount target v
-                    _properties.Add(k, mounted)
+                add = fun _ v -> 
+                    writer.mount target v
 
-                update = fun k v -> 
-                    let mounted = _properties.[k]
+                update = fun _ mounted v -> 
                     match mounted.update with
-                    | Some u -> u v
+                    | Some u -> 
+                        u v
+                        mounted
                     | None ->
                     // update fallback is remove and add
                     mounted.remove()
-                    _properties.Remove k |> ignore
-                    let mounted = writer.mount target v
-                    _properties.Add(k, mounted)
+                    writer.mount target v
                     
-                remove = fun k v -> 
-                    _properties.[k].remove()
-                    _properties.Remove k |> ignore
+                remove = fun _ mounted -> 
+                    mounted.remove()
             }
 
         reconcile functions
 
     member this.update properties = 
         let namedProperties = properties |> List.map (fun p -> (p.GetType().Name, p))
-        _values <- reconcile _values namedProperties
+        _properties <- reconcile _properties namedProperties

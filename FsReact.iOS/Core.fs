@@ -1,6 +1,6 @@
 namespace FsReact
 
-// May contain duplicates, first one wins
+open System.Collections.Generic
 
 type Properties = obj list
 
@@ -12,6 +12,8 @@ and Element = { kind: ElementKind; props: Properties }
 
 and Component =
     abstract render : unit -> Element
+    abstract dispatchEvent : obj -> unit
+    abstract _class : ComponentClass
 
 and ComponentClass = 
     abstract createComponent : Properties -> Component
@@ -20,16 +22,19 @@ type Component<'event, 'state> =
     {
         _class : ComponentClass<'event, 'state>
         props : Props.Props;
-        state : 'state;
+        mutable state : 'state;
     } 
     interface Component with
+        member this._class = this._class :> _
         member this.render() = this._class.render this
+        member this.dispatchEvent event =
+            this.state <- this._class.update this (event :?> 'event, [])
 
 and ComponentClass<'event, 'state> =
     { 
         getInitialState : unit -> 'state; 
         getDefaultProps : unit -> Properties;
-        handleChange : Component<'event, 'state> -> 'event * Properties -> 'state;
+        update : Component<'event, 'state> -> 'event * Properties -> 'state;
         render: Component<'event, 'state> -> Element
     }
     interface ComponentClass
@@ -45,13 +50,35 @@ and ComponentClass<'event, 'state> =
 
 module Core =
 
+    (* Components *)
+
     let createClass<'event, 'state>(getInitialState, handleChange, render) : ComponentClass<'event, 'state> = 
         { 
             getInitialState = getInitialState;
             getDefaultProps = fun () -> [];
-            handleChange = handleChange;
+            update = handleChange;
             render = render;
         }
 
     let element c p = { kind = Component c; props = p }
     let native name p = { kind = Native name; props = p }
+
+
+    (* Event Handdling *)
+
+    type EventRoot = (Component * obj) -> unit
+
+    let private _eventRoots = HashSet<EventRoot>()
+
+    let registerEventRoot f =
+        let r = _eventRoots.Add f
+        assert(r)
+        fun () -> 
+            let r = _eventRoots.Remove f
+            assert(r)
+
+    let dispatchEvent event = 
+        // take a copy here, _eventRoots may change while dispatching the events
+        _eventRoots 
+        |> Seq.toArray
+        |> Array.iter (fun f -> f event)
