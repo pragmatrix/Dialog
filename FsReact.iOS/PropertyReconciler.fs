@@ -24,7 +24,7 @@ type PropertyReconciler<'target>(writer : PropertyWriter<'target>, target : 'tar
                 add = fun _ _ v -> 
                     writer.mount target v
 
-                update = fun _ mounted v -> 
+                update = fun _ _ mounted v -> 
                     match mounted.update with
                     | Some u -> 
                         u v

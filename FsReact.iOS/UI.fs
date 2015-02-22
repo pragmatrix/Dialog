@@ -75,7 +75,7 @@ module UI =
             | Some key -> key
             | None -> derivedKey key i
 
-        let rec mount (context: Context) (key:string) (element : Element) : MountedElement = 
+        let rec mount (context: Context) index (key:string) (element : Element) : MountedElement = 
             let props = element.props |> Props.ofList
 
             match element.kind with
@@ -83,7 +83,7 @@ module UI =
                 let c = c.createComponent element.props
                 let nested = c.render()
                 let nestedKey = elementKey key 0 nested
-                let nested = mount context nestedKey nested
+                let nested = mount context 0 nestedKey nested
                 let nested = [nested.key, nested] |> Dict.ofList
                 { 
                     props = element.props |> Props.ofList; 
@@ -93,12 +93,12 @@ module UI =
                 }
             | Native name ->
                 let resource = Registry.createResource name element.props
-                context.mountNested resource
+                context.mountNested index resource
                 let nestedContext = context.push resource
                 let nested = 
                     props 
                     |> Props.tryGetOr (function Elements nested -> nested) []
-                    |> List.mapi (fun i element -> mount nestedContext (elementKey key i element) element)
+                    |> List.mapi (fun i element -> mount nestedContext i (elementKey key i element) element)
                     |> List.map (fun m -> m.key, m)
                     |> Dict.ofList
                 {
@@ -122,7 +122,7 @@ module UI =
 
             mounted.state.unmount()
 
-        let rec reconcile (context: Context) (mounted: MountedElement) (element: Element) = 
+        let rec reconcile (context: Context) index (mounted: MountedElement) (element: Element) = 
             match mounted.state, element.kind with
             | ComponentState c, Component eClass when obj.ReferenceEquals(c._class, eClass) ->
                 let mounted = mounted.applyProps element.props
@@ -142,7 +142,7 @@ module UI =
 
             | _ ->
                 unmount context mounted
-                mount context mounted.key element
+                mount context index mounted.key element
 
         and reconcileNested (context: Context) (mounted: MountedElement) (nested: Element list) =
             let key = mounted.key
@@ -155,11 +155,11 @@ module UI =
                 {
                 add = 
                     fun i k e -> 
-                    mount context k e;
+                    mount context i k e;
                 update = 
-                    fun k m e -> 
+                    fun i k m e -> 
                     assert(k = m.key)
-                    reconcile context m e;
+                    reconcile context i m e;
                 remove = 
                     fun k m -> 
                     assert (k = m.key)
@@ -173,7 +173,7 @@ module UI =
             match root.state with
             | ComponentState c ->
                 let element = { Element.kind = Component c._class; props = root.props |> Props.toList }
-                reconcile Context.empty root element
+                reconcile Context.empty 0 root element
             | _ -> failwith "a mounted element at root must be a component"
 
         let rootKey = ""
@@ -186,6 +186,6 @@ module UI =
     let mountRoot resource element = 
         let context = VDOM.Context.empty
         let context = context.push resource
-        let mounted = VDOM.mount context VDOM.rootKey element
+        let mounted = VDOM.mount context 0 VDOM.rootKey element
         { root = mounted }
 

@@ -40,8 +40,8 @@ module iOS =
 
     let createView props = 
         let view = new UIView()
-        let mounter (view : UIView) nested = 
-            view.AddSubview nested
+        let mounter (view : UIView) (index:int) nested = 
+            view.InsertSubview(nested, nint(index))
         let unmounter (_ : UIView) (nested : UIView) = 
             nested.RemoveFromSuperview()
 
@@ -75,7 +75,8 @@ module iOS =
             failwith "React can only render to an UIViewController that has no view yet."
 
 
-        let mountView (controller : UIViewController) view = 
+        let mountView (controller : UIViewController) index view = 
+            assert(index = 0)
             controller.View <- view
 
         let unmountView (controller: UIViewController) view = 

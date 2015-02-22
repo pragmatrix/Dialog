@@ -15,6 +15,7 @@ module Dict =
 
     let private deconstruct (kvp:KeyValuePair<_, _>) = kvp.Key, kvp.Value
     let toSeq (d:Dict<_,_>) = d |> seq |> Seq.map deconstruct
+
 (* 
     A key-based dictionary reconciler.
 
@@ -28,7 +29,7 @@ module Reconciler =
     type ReconcileFunctions<'k, 'v, 'g> = 
         { 
             add: int -> 'k -> 'v -> 'g; 
-            update: 'k -> 'g -> 'v -> 'g; 
+            update: int -> 'k -> 'g -> 'v -> 'g; 
             remove : 'k -> 'g -> unit 
         }
 
@@ -47,15 +48,19 @@ module Reconciler =
             | false -> functions.remove k kv.Value
             | _ -> ()
 
+        // The process updates and adds in order 
+        // This ensures that if the caller organizes elements in a list, 
+        // they will always match up with the new list.
+
         let r = Dict<'k, 'g>(cur.Count)
 
         for k, v in next do
+            let i = indexTable.[k]
             match cur.TryGetValue k with
             | (true, g) -> 
-                let g = functions.update k g v
+                let g = functions.update i k g v
                 r.Add (k, g)
             | (false, _) ->
-                let i = indexTable.[k]
                 let g = functions.add i k v 
                 r.Add (k, g)
 

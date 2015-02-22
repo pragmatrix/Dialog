@@ -9,7 +9,7 @@ module Resources =
         inherit IDisposable
         abstract update : Properties -> unit
         abstract instance : obj
-        abstract mountNested : Resource -> unit
+        abstract mountNested : int -> Resource -> unit
         abstract unmountNested : Resource -> unit
 
 
@@ -26,7 +26,7 @@ module Resources =
             member __.instance = instance :> obj
             member __.update props = reconciler.update props
             member __.Dispose() = disposer instance
-            member __.mountNested nested = nestingAdapter.mount instance nested.instance
+            member __.mountNested index nested = nestingAdapter.mount instance index nested.instance
             member __.unmountNested nested = nestingAdapter.unmount instance nested.instance
 
 
