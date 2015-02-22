@@ -6,7 +6,9 @@ open FsReact.UI
 open UIKit
 open Resources
 open System
+open CoreGraphics
 open Facebook.CSSLayout
+open System.Collections.Generic
 
 module iOS =
 
@@ -15,25 +17,68 @@ module iOS =
     type Control(view: UIView, css: CSSNode) = 
         member this.view = view
         member this.css = css
+        member this.updateCSS() = 
+            if (not css.HasNewLayout) then ()
+            else
+            let left = css.LayoutX
+            let top = css.LayoutY
+            let width = css.LayoutWidth
+            let height = css.LayoutHeight
+            let frame = CGRect(nfloat(left), nfloat(top), nfloat(width), nfloat(height))
+            view.Frame <- frame
+            css.MarkLayoutSeen()
 
     type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
         inherit Control(view, css)
         member this.view = view
 
-    type View(view: UIView, css:CSSNode) = 
-        inherit Control(view, css)
+
+
+    type UICSSLayoutView(css: CSSNode) =
+        inherit UIView()
+
+        let controls = HashSet<Control>()
+
+        override this.LayoutSubviews() = 
+            if (css.Parent <> null) then ()
+            else
+            let bounds = this.Bounds
+            css.StyleWidth <- bounds.Width |> float32
+            css.StyleHeight <- bounds.Height |> float32
+
+            if (not css.IsDirty) then ()
+            else
+
+            css.CalculateLayout()
+            if (not css.HasNewLayout) then ()
+            controls |> Seq.iter (fun ctrl -> ctrl.updateCSS())
+            css.MarkLayoutSeen()
+
+        member this.addControl(control: Control) = 
+            controls.Add control |> ignore
+
+        member this.removeControl(control: Control) = 
+            controls.Remove control |> ignore
+            
+
+    type View(view: UICSSLayoutView, css:CSSNode) = 
+        inherit Control<UICSSLayoutView>(view, css)
 
     let buttonWriter = 
         PropertyWriter.empty<Control<UIButton>>
         |. (Text "", fun this (Text t) -> 
             this.view.SetTitle(t, UIControlState.Normal)
             this.view.SizeToFit()
+
+            this.css.StyleWidth <- this.view.Bounds.Width |> float |> Math.Ceiling |> float32
+            this.css.StyleHeight <- this.view.Bounds.Height |> float |> Math.Ceiling |> float32
             )
         
         |+ fun this (OnClick e) -> 
             let handler = EventHandler(fun o ea -> dispatchEvent e)
-            this.view.TouchDown.AddHandler handler
-            fun () -> this.view.TouchDown.RemoveHandler handler
+            this.view.TouchUpInside.AddHandler handler
+            fun () -> this.view.TouchUpInside.RemoveHandler handler
+
 
     let labelWriter = 
         PropertyWriter.empty<Control<UILabel>>
@@ -42,6 +87,24 @@ module iOS =
     let viewWriter = 
         PropertyWriter.empty<View>
         |+ fun _ (Elements _) -> id
+        |. (AlignItems Auto, fun this (AlignItems align) ->
+            this.css.AlignItems <- 
+                match align with
+                | Align.Auto -> CSSAlign.Auto
+                | Align.Start -> CSSAlign.FlexStart
+                | Align.Center -> CSSAlign.Center
+                | Align.End -> CSSAlign.FlexEnd
+                | Align.Stretch -> CSSAlign.Stretch
+            )
+        |. (JustifyContent Start, fun this (JustifyContent justify) ->
+            this.css.JustifyContent <-
+                match justify with
+                | Justify.Start -> CSSJustify.FlexStart
+                | Justify.Center -> CSSJustify.Center
+                | Justify.End -> CSSJustify.FlexEnd
+                | Justify.SpaceBetween -> CSSJustify.SpaceBetween
+                | Justify.SpaceAround -> CSSJustify.SpaceAround
+            )
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()
@@ -51,14 +114,16 @@ module iOS =
         Control<_>(view, CSSNode())
 
     let createView props = 
-        let view = new UIView()
         let css = CSSNode()
+        let view = new UICSSLayoutView(css)
         let view = View(view, css)
         let mounter (this : View) (index:int) (nested : Control) = 
             this.css.InsertChild(index, nested.css)
             this.view.InsertSubview(nested.view, nint(index))
+            this.view.addControl(nested)
 
         let unmounter (this : View) (nested : Control) = 
+            this.view.removeControl(nested)
             nested.view.RemoveFromSuperview()
             nested.css.RemoveSelf()
 

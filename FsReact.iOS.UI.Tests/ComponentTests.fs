@@ -20,8 +20,8 @@ let counter =
 
         view [
             button ("Click to Count " + state.count.ToString()) (this, ButtonClicked) [];
-            text ("count: " + state.count.ToString()) [];
-        ] []
+            button ("count: " + state.count.ToString()) (this, ButtonClicked) [];
+        ] [AlignItems.Center; JustifyContent.Center]
 
 //        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
 
