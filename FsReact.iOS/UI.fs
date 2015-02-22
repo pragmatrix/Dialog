@@ -3,6 +3,7 @@
 module UI =
 
     open FsReact.Core
+    open System.Diagnostics
 
     type Elements = Elements of Element list
     type Text = Text of string
@@ -48,9 +49,22 @@ module UI =
                     this.props |> Props.apply props
                 { this with props = newProps }
 
-        type Context = { key: string; index: int }
+        type Context = { resources: Resource list }
+            with
+            member this.mountNested nested =
+                match this.resources with
+                | [] -> failwithf "failed to mount nested resource %s, no ancestor" (nested.ToString())
+                | ancestor :: _ -> ancestor.mountNested nested
 
-        let mkContext key i = { key = key; index = i }
+            member this.unmountNested nested = 
+                match this.resources with
+                | [] -> failwithf "failed to unmount nested resource %s, no ancestor" (nested.ToString())
+                | ancestor :: _ -> ancestor.unmountNested nested
+
+            member this.push resource = 
+                { this with resources = resource :: this.resources }
+
+            static member empty = { resources = [] }
 
         let derivedKey key (i:int) = key + "." + (i |> string)
 
@@ -59,7 +73,9 @@ module UI =
             | Some key -> key
             | None -> derivedKey key i
 
-        let rec mount (key:string) (element : Element) : MountedElement = 
+        let debug = System.Diagnostics.Debug.WriteLine
+
+        let rec mount (context: Context) (key:string) (element : Element) : MountedElement = 
             let props = element.props |> Props.ofList
 
             match element.kind with
@@ -67,7 +83,7 @@ module UI =
                 let c = c.createComponent element.props
                 let nested = c.render()
                 let nestedKey = elementKey key 0 nested
-                let nested = mount nestedKey nested
+                let nested = mount context nestedKey nested
                 let nested = [nested.key, nested] |> Dict.ofList
                 { 
                     props = element.props |> Props.ofList; 
@@ -78,12 +94,18 @@ module UI =
 
             | Native name ->
                 let resource = Registry.createResource name element.props
+                context.mountNested resource
+                let nestedContext = context.push resource
                 let nested = 
                     props 
                     |> Props.tryGetOr (function Elements nested -> nested) []
-                    |> List.mapi (fun i element -> mount (elementKey key i element) element)
+                    |> List.mapi (fun i element -> mount nestedContext (elementKey key i element) element)
                     |> List.map (fun m -> m.key, m)
                     |> Dict.ofList
+
+                debug (sprintf "props: %A" props)
+                debug (sprintf "properties: %A" element.props)
+                debug (sprintf "nested: %A" nested)
 
                 {
                     props = props;
@@ -92,25 +114,36 @@ module UI =
                     nested = nested
                 }
 
-        let rec unmount (mounted: MountedElement) =
-            mounted.nested |> Dict.toSeq |> Seq.iter (snd >> unmount)
+        let rec unmount (context: Context) (mounted: MountedElement) =
+            
+            let nestedContext = 
+                match mounted.state with
+                | ResourceState r -> context.push r.resource
+                | ComponentState _ -> context
+
+            mounted.nested |> Dict.toSeq |> Seq.iter (snd >> unmount nestedContext)
+
+            match mounted.state with
+            | ResourceState r -> context.unmountNested r.resource
+            | ComponentState _ -> ()
+
             mounted.state.unmount()
 
-        let rec reconcile (mounted: MountedElement) (element: Element) = 
+        let rec reconcile (context: Context) (mounted: MountedElement) (element: Element) = 
             match mounted.state, element.kind with
             | ComponentState c, Component eClass when obj.ReferenceEquals(c._class, eClass) ->
                 let mounted = mounted.applyProps element.props
                 let nested = c.render()
-                reconcileNested mounted [nested]
+                reconcileNested context mounted [nested]
 
             | ResourceState ln, Native rn  when ln.name = rn ->
                 ln.resource.update element.props
                 mounted.applyProps element.props
             | _ ->
-                unmount mounted
-                mount mounted.key element
+                unmount context mounted
+                mount context mounted.key element
 
-        and reconcileNested (mounted: MountedElement) (nested: Element list) =
+        and reconcileNested (context: Context) (mounted: MountedElement) (nested: Element list) =
             let key = mounted.key
 
             let keyedNested = 
@@ -119,14 +152,14 @@ module UI =
 
             let functions = 
                 {
-                    add = (fun k e -> mount k e);
+                    add = (fun k e -> mount context k e);
                     update = fun k m e -> 
                         assert(k = m.key)
-                        reconcile m e;
+                        reconcile context m e;
                     remove = 
                         fun k m -> 
                         assert (k = m.key)
-                        unmount m
+                        unmount context m
                 }
 
             let newNested = Reconciler.reconcile functions mounted.nested keyedNested
@@ -136,25 +169,19 @@ module UI =
             match root.state with
             | ComponentState c ->
                 let element = { Element.kind = Component c._class; props = root.props |> Props.toList }
-                reconcile root element
-            | _ -> failwith "a mounted element at root must be a Component"
+                reconcile Context.empty root element
+            | _ -> failwith "a mounted element at root must be a component"
 
         let rootKey = ""
-
-        let rec resolveTopPresenter mounted = 
-            match mounted.state with
-            | ResourceState p -> p
-            | ComponentState _ -> resolveTopPresenter (mounted.nested |> Dict.toSeq |> Seq.head |> snd)
-
 
  
     type MountedRoot = 
         { mutable root: VDOM.MountedElement }
         member this.update() = this.root <- VDOM.updateRoot this.root
 
-    let resolveTopPresenter root = VDOM.resolveTopPresenter root.root
-
-    let mountRoot element = 
-        let mounted = VDOM.mount VDOM.rootKey element
+    let mountRoot resource element = 
+        let context = VDOM.Context.empty
+        let context = context.push resource
+        let mounted = VDOM.mount context VDOM.rootKey element
         { root = mounted }
 

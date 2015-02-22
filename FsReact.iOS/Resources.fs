@@ -9,16 +9,34 @@ module Resources =
         inherit IDisposable
         abstract update : Properties -> unit
         abstract instance : obj
+        abstract mountNested : Resource -> unit
+        abstract unmountNested : Resource -> unit
 
-    type Resource<'resource>(instance: 'resource, writer: PropertyWriter<'resource>, disposer: 'resource -> unit) =
+
+    type Resource<'resource>
+        (
+            instance: 'resource,
+            writer: PropertyWriter<'resource>, 
+            nestingAdapter: NestingAdapter<'resource, obj>,
+            disposer: 'resource -> unit
+        ) =
+
         let reconciler = PropertyReconciler<'resource>(writer, instance)
         interface Resource with
             member __.instance = instance :> obj
             member __.update props = reconciler.update props
             member __.Dispose() = disposer instance
+            member __.mountNested nested = nestingAdapter.mount instance nested.instance
+            member __.unmountNested nested = nestingAdapter.unmount instance nested.instance
+
 
     let createResource writer disposer instance initialProps = 
-        let r = new Resource<_>(instance, writer, disposer)
+        let r = new Resource<_>(instance, writer, NestingAdapter.invalid(), disposer)
+        (r :> Resource).update initialProps
+        r
+
+    let createAncestorResource writer disposer (nestingAdapter: NestingAdapter<'target, 'nested>) instance initialProps = 
+        let r = new Resource<_>(instance, writer, nestingAdapter.promoteNested(), disposer)
         (r :> Resource).update initialProps
         r
 

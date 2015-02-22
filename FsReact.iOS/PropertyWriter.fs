@@ -76,7 +76,10 @@ type PropertyWriter<'target> =
 
     member this.mount target property =
         let name = property.GetType().Name
-        this.map.[name] target property
+        match this.map.TryFind name with
+        | Some p -> p target property
+        | None ->
+            failwithf "native type '%s' does not support property '%s'" typedefof<'target>.Name name
 
 (*
     member this.derived() : PropertyWriter<'derived> = 

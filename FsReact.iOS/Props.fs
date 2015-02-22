@@ -7,9 +7,10 @@ module Props =
 
     let empty : Props = Map.empty
 
-    let private key (prop:'t) = typedefof<'t>.Name
+    let private key (prop:obj) = prop.GetType().Name
 
     let apply (newProps : Properties) props = 
+
         let applyOne (props : Props) prop = 
             props.Add(key prop, prop)
 

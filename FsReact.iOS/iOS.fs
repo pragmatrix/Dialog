@@ -13,7 +13,10 @@ module iOS =
 
     let buttonWriter = 
         PropertyWriter.empty<UIButton>
-        |. (Text "", fun b (Text t) -> b.SetTitle(t, UIControlState.Normal))
+        |. (Text "", fun b (Text t) -> 
+            b.SetTitle(t, UIControlState.Normal)
+            b.SizeToFit()
+            )
         
         |+ fun b (OnClick e) -> 
             let handler = EventHandler(fun o ea -> dispatchEvent e)
@@ -26,6 +29,7 @@ module iOS =
 
     let viewWriter = 
         PropertyWriter.empty<UIView>
+        |+ fun _ (Elements _) -> id
 
     let inline viewDisposer v = 
         let v = v :> UIView
@@ -34,7 +38,15 @@ module iOS =
 
     let createView props = 
         let view = new UIView()
-        createResource viewWriter viewDisposer view props
+        let mounter (view : UIView) nested = 
+            view.AddSubview nested
+        let unmounter (_ : UIView) (nested : UIView) = 
+            nested.RemoveFromSuperview()
+
+        let nestingAdapter = 
+            NestingAdapter(mounter, unmounter)
+
+        createAncestorResource viewWriter viewDisposer nestingAdapter view props
         
     let createButton props = 
         let button = UIButton.FromType(UIButtonType.System)
@@ -60,12 +72,29 @@ module iOS =
         if target.IsViewLoaded then
             failwith "React can only render to an UIViewController that has no view yet."
 
-        let mounted = UI.mountRoot element
+
+        let mountView (controller : UIViewController) view = 
+            controller.View <- view
+
+        let unmountView (controller: UIViewController) view = 
+            assert(controller.View = view)
+            controller.View <- null
+
+        let nestingAdapter = NestingAdapter(mountView, unmountView)
+        let disposer _ = ()
+
+        let controllerResource = 
+            Resources.createAncestorResource 
+                PropertyWriter.empty 
+                disposer 
+                nestingAdapter
+                target 
+                []
+
+        let mounted = UI.mountRoot controllerResource element
         registerEventRoot mounted |> ignore
 
-        let topPresenter = UI.resolveTopPresenter mounted
-        target.View <- topPresenter.resource.instance :?> UIView
-
+(*
 
     let renderToView element (target : UIView) = 
         if (target.Subviews.Length <> 0) then
@@ -77,5 +106,4 @@ module iOS =
         let topPresenter = UI.resolveTopPresenter mounted
         target.AddSubview(topPresenter.resource.instance :?> UIView)
 
-
-
+*)

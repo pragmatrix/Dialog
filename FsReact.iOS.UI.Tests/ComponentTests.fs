@@ -8,24 +8,23 @@ type CounterState = { count: int }
 
 let counter = 
 
-    let getInitialState () = { count = 0 }
+    let initialState () = { count = 0 }
 
-    let handleChange this (e, _) =
+    let update this (e, _) =
         let state = this.state
         match e with 
         | ButtonClicked -> { state with count = state.count+1 }
 
     let render this = 
         let state = this.state
-        (*
+
         view [
-            button "Click to Count" (this, ButtonClicked) [];
-            text ("count: " + state.count.ToString()) [];
+            button ("Click to Count " + state.count.ToString()) (this, ButtonClicked) [];
+//            text ("count: " + state.count.ToString()) [];
         ] []
-        *)
 
-        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
+//        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
 
 
-    Core.createClass(getInitialState, handleChange, render);
+    Core.createClass(initialState, update, render);
 
