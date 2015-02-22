@@ -154,7 +154,7 @@ module UI =
             let functions = 
                 {
                 add = 
-                    fun k e -> 
+                    fun i k e -> 
                     mount context k e;
                 update = 
                     fun k m e -> 

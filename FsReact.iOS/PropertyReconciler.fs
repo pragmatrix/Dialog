@@ -21,7 +21,7 @@ type PropertyReconciler<'target>(writer : PropertyWriter<'target>, target : 'tar
     let reconcile = 
         let functions = 
             {
-                add = fun _ v -> 
+                add = fun _ _ v -> 
                     writer.mount target v
 
                 update = fun _ mounted v -> 

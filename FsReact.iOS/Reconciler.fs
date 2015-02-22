@@ -27,26 +27,36 @@ module Reconciler =
 
     type ReconcileFunctions<'k, 'v, 'g> = 
         { 
-            add: 'k -> 'v -> 'g; 
+            add: int -> 'k -> 'v -> 'g; 
             update: 'k -> 'g -> 'v -> 'g; 
             remove : 'k -> 'g -> unit 
         }
 
     let reconcile (functions: ReconcileFunctions<'k, 'v, 'g>) (cur: Dict<'k, 'g>) (next: ('k * 'v) list) : Dict<'k, 'g> = 
+        let indexTable = Dict<'k, int>(cur.Count)
+        next 
+        |> List.iteri (fun i (k, _) -> indexTable.Add(k, i))
+
+        // First remove the old ones, so that 
+        // - at no point in time, new and old elements are mixed
+        // - and our add indices match the target lists position
+        
+        for kv in cur do
+            let k = kv.Key
+            match indexTable.TryGetValue k |> fst with
+            | false -> functions.remove k kv.Value
+            | _ -> ()
+
         let r = Dict<'k, 'g>(cur.Count)
-        for k,v in next do
+
+        for k, v in next do
             match cur.TryGetValue k with
             | (true, g) -> 
                 let g = functions.update k g v
                 r.Add (k, g)
             | (false, _) ->
-                let g = functions.add k v 
+                let i = indexTable.[k]
+                let g = functions.add i k v 
                 r.Add (k, g)
-
-        for kv in cur do
-            let k = kv.Key
-            match r.TryGetValue k |> fst with
-            | false -> functions.remove k kv.Value
-            | _ -> ()
 
         r
