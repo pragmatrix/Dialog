@@ -4,10 +4,9 @@ open FsReact
 open FsReact.Core
 open FsReact.UI
 open UIKit
-open CoreGraphics
-open Foundation
 open Resources
 open System
+open Facebook.CSSLayout
 
 module iOS =
 
@@ -72,8 +71,7 @@ module iOS =
 
     let renderToController element (target : UIViewController) =
         if target.IsViewLoaded then
-            failwith "React can only render to an UIViewController that has no view yet."
-
+            failwith "FsReact can only render to an UIViewController that has no view yet."
 
         let mountView (controller : UIViewController) index view = 
             assert(index = 0)
@@ -94,7 +92,9 @@ module iOS =
                 target 
                 []
 
-        let mounted = UI.mountRoot controllerResource element
+        let controllerState = { name="UIController"; resource = controllerResource; css = CSSNode() }
+
+        let mounted = UI.mountRoot controllerState element
         registerEventRoot mounted |> ignore
 
 (*

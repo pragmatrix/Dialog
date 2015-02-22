@@ -51,22 +51,26 @@ module UI =
                     this.props |> Props.apply props
                 { this with props = newProps }
 
-        type Context = { resources: Resource list }
+        type Context = { states: ResourceState list }
             with
-            member this.mountNested nested =
-                match this.resources with
+            member this.mountNested index nested =
+                match this.states with
                 | [] -> failwithf "failed to mount nested resource %s, no ancestor" (nested.ToString())
-                | ancestor :: _ -> ancestor.mountNested nested
+                | ancestor :: _ -> 
+                ancestor.resource.mountNested index nested.resource
+                ancestor.css.InsertChild(index, nested.css)
 
             member this.unmountNested nested = 
-                match this.resources with
+                match this.states with
                 | [] -> failwithf "failed to unmount nested resource %s, no ancestor" (nested.ToString())
-                | ancestor :: _ -> ancestor.unmountNested nested
+                | ancestor :: _ -> 
+                ancestor.resource.unmountNested nested.resource
+                nested.css.RemoveSelf()
 
-            member this.push resource = 
-                { this with resources = resource :: this.resources }
+            member this.push state = 
+                { this with states = state :: this.states }
 
-            static member empty = { resources = [] }
+            static member empty = { states = [] }
 
         let derivedKey key (i:int) = key + "." + (i |> string)
 
@@ -93,8 +97,9 @@ module UI =
                 }
             | Native name ->
                 let resource = Registry.createResource name element.props
-                context.mountNested index resource
-                let nestedContext = context.push resource
+                let state = { name = name; resource = resource; css = CSSNode() }
+                context.mountNested index state
+                let nestedContext = context.push state
                 let nested = 
                     props 
                     |> Props.tryGetOr (function Elements nested -> nested) []
@@ -104,20 +109,20 @@ module UI =
                 {
                     props = props;
                     key = key;
-                    state = ResourceState { name = name; resource = resource; css = CSSNode() };
+                    state = ResourceState state;
                     nested = nested
                 }
 
         let rec unmount (context: Context) (mounted: MountedElement) =
             let nestedContext = 
                 match mounted.state with
-                | ResourceState r -> context.push r.resource
+                | ResourceState r -> context.push r
                 | ComponentState _ -> context
 
             mounted.nested |> Dict.toSeq |> Seq.iter (snd >> unmount nestedContext)
 
             match mounted.state with
-            | ResourceState r -> context.unmountNested r.resource
+            | ResourceState r -> context.unmountNested r
             | ComponentState _ -> ()
 
             mounted.state.unmount()
