@@ -22,10 +22,9 @@ module UI =
         type Props = Props.Props
 
         open Resources
-        open Facebook.CSSLayout
         open Reconciler
 
-        type ResourceState = { name: string; resource: Resource; css: CSSNode }
+        type ResourceState = { name: string; resource: Resource }
 
         type MountedState = 
             | ResourceState of ResourceState
@@ -33,8 +32,7 @@ module UI =
             with
             member this.unmount() =
                 match this with
-                | ResourceState { resource = resource; css = css } ->
-                    css.RemoveSelf()
+                | ResourceState { resource = resource } ->
                     resource.Dispose()
                 | _ -> ()
 
@@ -58,14 +56,12 @@ module UI =
                 | [] -> failwithf "failed to mount nested resource %s, no ancestor" (nested.ToString())
                 | ancestor :: _ -> 
                 ancestor.resource.mountNested index nested.resource
-                ancestor.css.InsertChild(index, nested.css)
 
             member this.unmountNested nested = 
                 match this.states with
                 | [] -> failwithf "failed to unmount nested resource %s, no ancestor" (nested.ToString())
                 | ancestor :: _ -> 
                 ancestor.resource.unmountNested nested.resource
-                nested.css.RemoveSelf()
 
             member this.push state = 
                 { this with states = state :: this.states }
@@ -97,7 +93,7 @@ module UI =
                 }
             | Native name ->
                 let resource = Registry.createResource name element.props
-                let state = { name = name; resource = resource; css = CSSNode() }
+                let state = { name = name; resource = resource }
                 context.mountNested index state
                 let nestedContext = context.push state
                 let nested = 

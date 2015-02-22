@@ -12,50 +12,70 @@ module iOS =
 
     open VDOM
 
+    type Control(view: UIView, css: CSSNode) = 
+        member this.view = view
+        member this.css = css
+
+    type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
+        inherit Control(view, css)
+        member this.view = view
+
+    type View(view: UIView, css:CSSNode) = 
+        inherit Control(view, css)
+
     let buttonWriter = 
-        PropertyWriter.empty<UIButton>
-        |. (Text "", fun b (Text t) -> 
-            b.SetTitle(t, UIControlState.Normal)
-            b.SizeToFit()
+        PropertyWriter.empty<Control<UIButton>>
+        |. (Text "", fun this (Text t) -> 
+            this.view.SetTitle(t, UIControlState.Normal)
+            this.view.SizeToFit()
             )
         
-        |+ fun b (OnClick e) -> 
+        |+ fun this (OnClick e) -> 
             let handler = EventHandler(fun o ea -> dispatchEvent e)
-            b.TouchDown.AddHandler handler
-            fun () -> b.TouchDown.RemoveHandler handler
+            this.view.TouchDown.AddHandler handler
+            fun () -> this.view.TouchDown.RemoveHandler handler
 
     let labelWriter = 
-        PropertyWriter.empty<UILabel>
-        |. (Text "", fun l (Text t) -> l.Text <- t)
+        PropertyWriter.empty<Control<UILabel>>
+        |. (Text "", fun this (Text t) -> this.view.Text <- t)
 
     let viewWriter = 
-        PropertyWriter.empty<UIView>
+        PropertyWriter.empty<View>
         |+ fun _ (Elements _) -> id
 
-    let inline viewDisposer v = 
-        let v = v :> UIView
-        v.RemoveFromSuperview()
-        v.Dispose()
+    let inline controlDisposer (v:#Control) = 
+        v.view.RemoveFromSuperview()
+        v.view.Dispose()
+
+    let createControl view = 
+        Control<_>(view, CSSNode())
 
     let createView props = 
         let view = new UIView()
-        let mounter (view : UIView) (index:int) nested = 
-            view.InsertSubview(nested, nint(index))
-        let unmounter (_ : UIView) (nested : UIView) = 
-            nested.RemoveFromSuperview()
+        let css = CSSNode()
+        let view = View(view, css)
+        let mounter (this : View) (index:int) (nested : Control) = 
+            this.css.InsertChild(index, nested.css)
+            this.view.InsertSubview(nested.view, nint(index))
+
+        let unmounter (this : View) (nested : Control) = 
+            nested.view.RemoveFromSuperview()
+            nested.css.RemoveSelf()
 
         let nestingAdapter = 
             NestingAdapter(mounter, unmounter)
 
-        createAncestorResource viewWriter viewDisposer nestingAdapter view props
+        createAncestorResource viewWriter controlDisposer nestingAdapter view props
         
     let createButton props = 
         let button = UIButton.FromType(UIButtonType.System)
-        createResource buttonWriter viewDisposer button props
+        let control = createControl button
+        createResource buttonWriter controlDisposer control props
 
     let createLabel props =
         let label = new UILabel()
-        createResource labelWriter viewDisposer label props
+        let control = createControl label
+        createResource labelWriter controlDisposer control props
 
     let registerResources() =
         Registry.register "Button" createButton
@@ -73,12 +93,12 @@ module iOS =
         if target.IsViewLoaded then
             failwith "FsReact can only render to an UIViewController that has no view yet."
 
-        let mountView (controller : UIViewController) index view = 
+        let mountView (controller : UIViewController) index (control:Control) = 
             assert(index = 0)
-            controller.View <- view
+            controller.View <- control.view
 
-        let unmountView (controller: UIViewController) view = 
-            assert(controller.View = view)
+        let unmountView (controller: UIViewController) (control:Control) = 
+            assert(controller.View = control.view)
             controller.View <- null
 
         let nestingAdapter = NestingAdapter(mountView, unmountView)
@@ -92,7 +112,7 @@ module iOS =
                 target 
                 []
 
-        let controllerState = { name="UIController"; resource = controllerResource; css = CSSNode() }
+        let controllerState = { name="UIController"; resource = controllerResource }
 
         let mounted = UI.mountRoot controllerState element
         registerEventRoot mounted |> ignore
