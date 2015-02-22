@@ -17,6 +17,8 @@ module UI =
 
     module VDOM = 
 
+        let private debug = System.Diagnostics.Debug.WriteLine
+
         type Props = Props.Props
 
         open Resources
@@ -73,8 +75,6 @@ module UI =
             | Some key -> key
             | None -> derivedKey key i
 
-        let debug = System.Diagnostics.Debug.WriteLine
-
         let rec mount (context: Context) (key:string) (element : Element) : MountedElement = 
             let props = element.props |> Props.ofList
 
@@ -91,7 +91,6 @@ module UI =
                     state = ComponentState c; 
                     nested = nested
                 }
-
             | Native name ->
                 let resource = Registry.createResource name element.props
                 context.mountNested resource
@@ -102,11 +101,6 @@ module UI =
                     |> List.mapi (fun i element -> mount nestedContext (elementKey key i element) element)
                     |> List.map (fun m -> m.key, m)
                     |> Dict.ofList
-
-                debug (sprintf "props: %A" props)
-                debug (sprintf "properties: %A" element.props)
-                debug (sprintf "nested: %A" nested)
-
                 {
                     props = props;
                     key = key;
@@ -115,7 +109,6 @@ module UI =
                 }
 
         let rec unmount (context: Context) (mounted: MountedElement) =
-            
             let nestedContext = 
                 match mounted.state with
                 | ResourceState r -> context.push r.resource
@@ -160,14 +153,17 @@ module UI =
 
             let functions = 
                 {
-                    add = (fun k e -> mount context k e);
-                    update = fun k m e -> 
-                        assert(k = m.key)
-                        reconcile context m e;
-                    remove = 
-                        fun k m -> 
-                        assert (k = m.key)
-                        unmount context m
+                add = 
+                    fun k e -> 
+                    mount context k e;
+                update = 
+                    fun k m e -> 
+                    assert(k = m.key)
+                    reconcile context m e;
+                remove = 
+                    fun k m -> 
+                    assert (k = m.key)
+                    unmount context m
                 }
 
             let newNested = Reconciler.reconcile functions mounted.nested keyedNested
