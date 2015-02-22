@@ -4,6 +4,8 @@ open FsReact
 open FsReact.Core
 open FsReact.UI
 open UIKit
+open CoreGraphics
+open Foundation
 open Resources
 open System
 
@@ -15,6 +17,7 @@ module iOS =
         PropertyWriter.empty<UIButton>
         |. (Text "", fun b (Text t) -> 
             b.SetTitle(t, UIControlState.Normal)
+            b.Frame <- new CGRect(new nfloat(100.0), new nfloat(100.0), new nfloat(200.0), new nfloat(200.0))
             b.SizeToFit()
             )
         

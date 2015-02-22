@@ -138,7 +138,15 @@ module UI =
 
             | ResourceState ln, Native rn  when ln.name = rn ->
                 ln.resource.update element.props
-                mounted.applyProps element.props
+                let mounted = mounted.applyProps element.props
+
+                let nested = 
+                    element.props
+                    |> Props.ofList
+                    |> Props.tryGetOr (function Elements nested -> nested) []
+                   
+                reconcileNested context mounted nested
+
             | _ ->
                 unmount context mounted
                 mount context mounted.key element
