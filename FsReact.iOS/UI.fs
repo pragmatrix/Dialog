@@ -10,6 +10,14 @@ module UI =
     type OnClick = OnClick of (Component * obj)
     type Key = Key of string
 
+    type Color = { red: float; green: float; blue: float; alpha: float }
+        with
+        static member White = { red = 1.0; green = 1.0; blue = 1.0; alpha = 1.0 }
+        static member Black = { red = 0.0; green = 0.0; blue = 0.0; alpha = 1.0 }
+        static member Transparent = { red = 0.0; green = 0.0; blue = 0.0; alpha = 0.0 }
+
+    type BackgroundColor = | BackgroundColor of Color
+
     type Flex = Flex of int
 
     type Align = 
@@ -171,7 +179,8 @@ module UI =
                     |> Props.ofList
                     |> Props.tryGetOr (function Elements nested -> nested) []
                    
-                reconcileNested context mounted nested
+                let nestedContext = context.push ln
+                reconcileNested nestedContext mounted nested
 
             | _ ->
                 unmount context mounted
@@ -202,23 +211,26 @@ module UI =
             let newNested = Reconciler.reconcile functions mounted.nested keyedNested
             { mounted with nested = newNested }
 
-        let updateRoot root = 
+        let updateRoot context root = 
             match root.state with
             | ComponentState c ->
                 let element = { Element.kind = Component c._class; props = root.props |> Props.toList }
-                reconcile Context.empty 0 root element
+                reconcile context 0 root element
             | _ -> failwith "a mounted element at root must be a component"
 
         let rootKey = ""
 
  
     type MountedRoot = 
-        { mutable root: VDOM.MountedElement }
-        member this.update() = this.root <- VDOM.updateRoot this.root
+        { 
+            context: VDOM.Context;
+            mutable root: VDOM.MountedElement 
+        }
+        member this.update() = this.root <- VDOM.updateRoot this.context this.root
 
     let mountRoot resource element = 
         let context = VDOM.Context.empty
         let context = context.push resource
         let mounted = VDOM.mount context 0 VDOM.rootKey element
-        { root = mounted }
+        { context = context; root = mounted }
 

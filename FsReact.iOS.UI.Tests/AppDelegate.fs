@@ -8,24 +8,30 @@ open FsReact.iOS
 open FsReact.Core
 open FsReact.UI
 
+open CoreGraphics
 open ComponentTests
 
 [<Register ("AppDelegate")>]
 type AppDelegate () =
     inherit UIApplicationDelegate ()
 
-    let window = new UIWindow (UIScreen.MainScreen.Bounds)
+    // window must be created in FinishedLaunching, otherwise MainScreen.Bounds are wrong, which results
+    // in a rotation problem, when we start in landscape mode.
+
+    let mutable _window = null
 
     override this.FinishedLaunching (app, options) =
 
         // can't make static initialization of F# modules work.       
         registerResources()
 
-        let controller = new RootViewController();
-        renderToController (element counter []) controller
+        let createView() = renderAsView (element counter [])
+        
+        _window <- new UIWindow (UIScreen.MainScreen.Bounds)
 
-        window.RootViewController <- controller
-        window.MakeKeyAndVisible ()
+        let controller = new RootViewController(createView);
+        _window.RootViewController <- controller
+        _window.MakeKeyAndVisible ()
 
         true
 

@@ -18,10 +18,15 @@ let counter =
     let render this = 
         let state = this.state
 
-        view [
-            button ("Click to Count " + state.count.ToString()) (this, ButtonClicked) [];
-            button ("count: " + state.count.ToString()) (this, ButtonClicked) [];
-        ] [AlignItems.Center; JustifyContent.Center]
+        if (state.count % 2 = 1) then
+            view [
+                if ((state.count % 2) = 0) then
+                    yield text ("counter: " + state.count.ToString()) []
+                yield button ("Click to Count " + state.count.ToString()) (this, ButtonClicked) []
+                yield button ("count: test") (this, ButtonClicked) []
+            ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+        else
+            button "yoho" (this, ButtonClicked) []
 
 //        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
 
