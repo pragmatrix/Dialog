@@ -90,16 +90,16 @@
     <Compile Include="Resources.fs" />
     <Compile Include="UI.fs" />
     <Compile Include="iOS.fs" />
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Facebook.CSSLayout">
+      <HintPath>..\packages\Facebook.CSSLayout.0.1.0.0\lib\portable-net40+win+WindowsPhoneApp81+Xamarin.iOS10+MonoAndroid10+MonoTouch10\Facebook.CSSLayout.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Xamarin.iOS" />
-    <ProjectReference Include="..\css-layout\src\csharp\Facebook.CSSLayout\Facebook.CSSLayout.csproj">
-      <Name>Facebook.CSSLayout</Name>
-      <Project>{d534fb4b-a7d4-4a29-96d3-f39a91a259bd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
 </Project>

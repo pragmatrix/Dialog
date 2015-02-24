@@ -18,18 +18,53 @@ let counter =
     let render this = 
         let state = this.state
 
-        if (state.count % 2 = 1) then
-            view [
-                if ((state.count % 2) = 0) then
-                    yield text ("counter: " + state.count.ToString()) []
-                yield button ("Click to Count " + state.count.ToString()) (this, ButtonClicked) []
-                yield button ("count: test") (this, ButtonClicked) []
-            ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
-        else
-            button "yoho" (this, ButtonClicked) []
+        view [
+            text ("counter: " + state.count.ToString()) []
+            button ("Click to Count ") (this, ButtonClicked) []
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
 //        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
 
-
     Core.createClass(initialState, update, render);
 
+let replaceRoot = 
+
+    let initialState () = { count = 0 }
+
+    let update this (e, _) = 
+        let state = this.state
+        match e with 
+        | ButtonClicked -> { state with count = state.count+1 }
+
+    let render this = 
+        let state = this.state
+
+        if (state.count % 2 = 0) then
+            button "Switch to B" (this, ButtonClicked) []
+        else 
+            button "Switch to A" (this, ButtonClicked) []
+            
+
+    Core.createClass(initialState, update, render)
+
+
+let replaceNested = 
+
+    let initialState () = { count = 0 }
+
+    let update this (e, _) = 
+        let state = this.state
+        match e with 
+        | ButtonClicked -> { state with count = state.count+1 }
+
+    let render this = 
+        let state = this.state
+
+        view [
+            if (state.count % 2 = 0) then
+                yield button "Switch to B" (this, ButtonClicked) []
+            else 
+                yield button "Switch to A" (this, ButtonClicked) []
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+
+    Core.createClass(initialState, update, render)

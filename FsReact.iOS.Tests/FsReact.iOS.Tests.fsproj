@@ -95,11 +95,6 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\css-layout\src\csharp\Facebook.CSSLayout\Facebook.CSSLayout.csproj">
-      <Name>Facebook.CSSLayout</Name>
-      <Project>{d534fb4b-a7d4-4a29-96d3-f39a91a259bd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\FsReact.iOS\FsReact.iOS.fsproj">
       <Name>FsReact.iOS</Name>
       <Project>{69c0fb7a-c40c-4d4b-8691-a94622605b08}</Project>
