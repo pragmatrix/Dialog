@@ -49,6 +49,7 @@
     <Compile Include="NestingAdapter.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Resources.fs" />
+    <Compile Include="VDOM.fs" />
     <Compile Include="UI.fs" />
   </ItemGroup>
   <PropertyGroup>
