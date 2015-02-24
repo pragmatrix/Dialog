@@ -4,13 +4,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
-    <ProjectGuid>f0a9f55f-1554-44a9-8a2d-42ae154c07ed</ProjectGuid>
+    <ProjectGuid>{F0A9F55F-1554-44A9-8A2D-42AE154C07ED}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>FsReact.iOS.UI.Tests</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>FsReactiOSUITests</AssemblyName>
     <Name>FsReact.iOS.UI.Tests</Name>
     <SelectedDevice>iPad 2 iOS 8.1</SelectedDevice>
+  	<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
     <DebugSymbols>true</DebugSymbols>
@@ -115,9 +116,12 @@
   <ItemGroup>
     <ProjectReference Include="..\FsReact.iOS\FsReact.iOS.fsproj">
       <Name>FsReact.iOS</Name>
-      <Project>{69c0fb7a-c40c-4d4b-8691-a94622605b08}</Project>
-      <Private>True</Private>
-      <IsAppExtension>false</IsAppExtension>
+      <Project>{69C0FB7A-C40C-4D4B-8691-A94622605B08}</Project>
+      <IsAppExtension>False</IsAppExtension>
+    </ProjectReference>
+    <ProjectReference Include="..\FsReact\FsReact.fsproj">
+      <Name>FsReact</Name>
+      <Project>{F431C008-04F2-4A1A-8ADF-CB89980ADBDD}</Project>
     </ProjectReference>
   </ItemGroup>
 </Project>

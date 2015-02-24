@@ -173,7 +173,6 @@ module iOS =
     let private registerEventRoot mountedRoot = 
         registerEventRoot (dispatchEventAndUpdate mountedRoot)
 
-
     let debug = System.Diagnostics.Debug.WriteLine
 
     type UIRootView() = 

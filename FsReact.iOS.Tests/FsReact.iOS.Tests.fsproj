@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
-    <ProjectGuid>8a8a2818-def4-43f6-898d-6ff7b94175e0</ProjectGuid>
+    <ProjectGuid>{8A8A2818-DEF4-43F6-898D-6FF7B94175E0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FsReact.iOS.Tests</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
@@ -87,7 +87,6 @@
   <ItemGroup>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -97,9 +96,13 @@
   <ItemGroup>
     <ProjectReference Include="..\FsReact.iOS\FsReact.iOS.fsproj">
       <Name>FsReact.iOS</Name>
-      <Project>{69c0fb7a-c40c-4d4b-8691-a94622605b08}</Project>
+      <Project>{69C0FB7A-C40C-4D4B-8691-A94622605B08}</Project>
+      <IsAppExtension>False</IsAppExtension>
+    </ProjectReference>
+    <ProjectReference Include="..\FsReact\FsReact.fsproj">
+      <Name>FsReact</Name>
+      <Project>{f431c008-04f2-4a1a-8adf-cb89980adbdd}</Project>
       <Private>True</Private>
-      <IsAppExtension>false</IsAppExtension>
     </ProjectReference>
   </ItemGroup>
 </Project>

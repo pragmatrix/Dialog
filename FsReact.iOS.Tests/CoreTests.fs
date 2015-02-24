@@ -39,7 +39,4 @@ type CoreTests() =
         dispatchEvent (c :> Component, null)
         registered()
         Assert.True(!delivered)
-
-
-
     

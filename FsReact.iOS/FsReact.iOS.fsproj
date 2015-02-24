@@ -81,25 +81,22 @@
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Props.fs" />
-    <Compile Include="Reconciler.fs" />
-    <Compile Include="PropertyWriter.fs" />
-    <Compile Include="PropertyReconciler.fs" />
-    <Compile Include="NestingAdapter.fs" />
-    <Compile Include="Core.fs" />
-    <Compile Include="Resources.fs" />
-    <Compile Include="UI.fs" />
     <Compile Include="iOS.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Facebook.CSSLayout">
       <HintPath>..\packages\Facebook.CSSLayout.0.1.0.0\lib\portable-net40+win+WindowsPhoneApp81+Xamarin.iOS10+MonoAndroid10+MonoTouch10\Facebook.CSSLayout.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Xamarin.iOS" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FsReact\FsReact.fsproj">
+      <Name>FsReact</Name>
+      <Project>{F431C008-04F2-4A1A-8ADF-CB89980ADBDD}</Project>
+    </ProjectReference>
   </ItemGroup>
 </Project>

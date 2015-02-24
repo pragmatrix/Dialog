@@ -5,11 +5,11 @@
     <key>CFBundleDisplayName</key>
     <string>FsReact.iOS.UI.Tests</string>
     <key>CFBundleIdentifier</key>
-    <string>com.your-company.FsReact.iOS.UI.Tests</string>
+    <string>FsReact.iOS.UI.Tests</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>0.1</string>
     <key>CFBundleVersion</key>
-    <string>1.0</string>
+    <string>0.1</string>
     <key>UIDeviceFamily</key>
     <array>
       <integer>1</integer>

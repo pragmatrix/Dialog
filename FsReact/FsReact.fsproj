@@ -11,8 +11,8 @@
     <TargetProfile>netcore</TargetProfile>
     <TargetFSharpCoreVersion>3.78.3.1</TargetFSharpCoreVersion>
     <Name>FsReact</Name>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,6 +39,17 @@
       <AssemblyName>FSharp.Core.dll</AssemblyName>
       <HintPath>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Props.fs" />
+    <Compile Include="Reconciler.fs" />
+    <Compile Include="PropertyWriter.fs" />
+    <Compile Include="PropertyReconciler.fs" />
+    <Compile Include="NestingAdapter.fs" />
+    <Compile Include="Core.fs" />
+    <Compile Include="Resources.fs" />
+    <Compile Include="UI.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
