@@ -25,7 +25,7 @@ type AppDelegate () =
         // can't make static initialization of F# modules work.       
         registerResources()
 
-        let createView() = renderAsView (element replaceNested [])
+        let createView() = renderAsView (element counter [])
         
         _window <- new UIWindow (UIScreen.MainScreen.Bounds)
 

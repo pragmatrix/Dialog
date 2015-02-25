@@ -44,7 +44,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Props.fs" />
     <Compile Include="Reconciler.fs" />
-    <Compile Include="PropertyWriter.fs" />
+    <Compile Include="Tracer.fs" />
+    <Compile Include="PropertyAccessor.fs" />
     <Compile Include="PropertyReconciler.fs" />
     <Compile Include="NestingAdapter.fs" />
     <Compile Include="Core.fs" />

@@ -28,6 +28,9 @@ module private VDOM =
                 resource.Dispose()
             | _ -> ()
 
+    let mkIdentity name key = 
+        key + "." + name
+
     type MountedElement = 
         {
             key: string; 
@@ -40,6 +43,11 @@ module private VDOM =
             let newProps =
                 this.props |> Props.apply props
             { this with props = newProps }
+
+        member this.identity =
+            match this.state with
+            | ResourceState r -> mkIdentity r.name this.key
+            | ComponentState _ -> this.key
 
     type Context = { states: ResourceState list }
         with
@@ -57,6 +65,9 @@ module private VDOM =
 
         member this.push state = 
             { this with states = state :: this.states }
+
+        member this.head = 
+            this.states |> List.head
 
         static member empty = { states = [] }
 
@@ -84,9 +95,13 @@ module private VDOM =
                 nested = nested
             }
         | Native name ->
-            let resource = Registry.createResource name element.props
+            let identity = mkIdentity name key
+            let resource = Registry.createResource name identity element.props
             let state = { name = name; resource = resource }
+
+            Trace.mountingResource context.head.name index identity
             context.mountNested index state
+
             let nestedContext = context.push state
             let nested = 
                 props 
@@ -110,7 +125,9 @@ module private VDOM =
         mounted.nested |> Dict.toSeq |> Seq.iter (snd >> unmount nestedContext)
 
         match mounted.state with
-        | ResourceState r -> context.unmountNested r
+        | ResourceState r ->
+            context.unmountNested r
+            Trace.unmountedResource context.head.name mounted.identity
         | ComponentState _ -> ()
 
         mounted.state.unmount()

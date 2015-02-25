@@ -72,50 +72,60 @@ module iOS =
             base.updateCSS()
             view.updateCSS()
 
+    open PropertyAccessor
+
+    let mkHandler handler = EventHandler handler
+
     let buttonWriter = 
-        PropertyWriter.empty<Control<UIButton>>
-        |. (Text "", fun this (Text t) ->
-            UIView.PerformWithoutAnimation(fun () ->
-                this.view.SetTitle(t, UIControlState.Normal)
-                this.view.LayoutIfNeeded()
-            ) 
-            this.view.SizeToFit()
+        accessor<Control<UIButton>>
+        |> defaultValue -- Text ""
+        |> writer --
+            fun this (Text t) ->
+                UIView.PerformWithoutAnimation(
+                    fun _ ->
+                        this.view.SetTitle(t, UIControlState.Normal)
+                        this.view.LayoutIfNeeded())
 
-            this.css.StyleWidth <- this.view.Bounds.Width |> float32
-            this.css.StyleHeight <- this.view.Bounds.Height |> float32
-            )
-        
-        |+ fun this (OnClick e) -> 
-            let handler = EventHandler(fun o ea -> dispatchEvent e)
-            this.view.TouchUpInside.AddHandler handler
-            fun () -> this.view.TouchUpInside.RemoveHandler handler
+                this.view.SizeToFit()
 
+                this.css.StyleWidth <- this.view.Bounds.Width |> float32
+                this.css.StyleHeight <- this.view.Bounds.Height |> float32
+        |> mounter --
+            fun this (OnClick e) ->
+                let handler = mkHandler -- fun o ea -> dispatchEvent e
+                this.view.TouchUpInside.AddHandler handler
+                fun () -> this.view.TouchUpInside.RemoveHandler handler
 
     let labelWriter = 
-        PropertyWriter.empty<Control<UILabel>>
-        |. (Text "", fun this (Text t) -> 
-            this.view.Text <- t
-            this.view.SizeToFit()
-            this.css.StyleWidth <- this.view.Bounds.Width |> float32
-            this.css.StyleHeight <- this.view.Bounds.Height |> float32
-            )
+        accessor<Control<UILabel>>
+        |> defaultValue -- Text ""
+        |> writer --
+            fun this (Text t) -> 
+                this.view.Text <- t
+                this.view.SizeToFit()
+                this.css.StyleWidth <- this.view.Bounds.Width |> float32
+                this.css.StyleHeight <- this.view.Bounds.Height |> float32
 
     let viewWriter = 
-        PropertyWriter.empty<View>
-        |+ fun _ (Elements _) -> id
-        |. (BackgroundColor Color.Transparent, fun this (BackgroundColor color) ->
-            this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
-            )
-        |. (AlignItems Auto, fun this (AlignItems align) ->
-            this.css.AlignItems <- 
-                match align with
-                | Align.Auto -> CSSAlign.Auto
-                | Align.Start -> CSSAlign.FlexStart
-                | Align.Center -> CSSAlign.Center
-                | Align.End -> CSSAlign.FlexEnd
-                | Align.Stretch -> CSSAlign.Stretch
-            )
-        |. (JustifyContent Start, fun this (JustifyContent justify) ->
+        accessor<View>
+        |> defaultValue -- BackgroundColor Color.Transparent
+        |> defaultValue -- AlignItems Auto
+        |> defaultValue -- JustifyContent Start
+        |> writer -- fun _ (Elements _) -> ()
+        |> writer --
+            fun this (BackgroundColor color) ->
+                this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
+        |> writer --
+            fun this (AlignItems align) ->
+                this.css.AlignItems <- 
+                    match align with
+                    | Align.Auto -> CSSAlign.Auto
+                    | Align.Start -> CSSAlign.FlexStart
+                    | Align.Center -> CSSAlign.Center
+                    | Align.End -> CSSAlign.FlexEnd
+                    | Align.Stretch -> CSSAlign.Stretch
+        |> writer --
+            fun this (JustifyContent justify) ->
             this.css.JustifyContent <-
                 match justify with
                 | Justify.Start -> CSSJustify.FlexStart
@@ -123,7 +133,6 @@ module iOS =
                 | Justify.End -> CSSJustify.FlexEnd
                 | Justify.SpaceBetween -> CSSJustify.SpaceBetween
                 | Justify.SpaceAround -> CSSJustify.SpaceAround
-            )
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()
@@ -132,7 +141,7 @@ module iOS =
     let createControl view = 
         Control<_>(view, CSSNode())
 
-    let createView props = 
+    let createView identity props = 
         let css = CSSNode()
         let view = new UICSSLayoutView(css)
         let view = View(view, css)
@@ -149,17 +158,17 @@ module iOS =
         let nestingAdapter = 
             NestingAdapter(mounter, unmounter)
 
-        createAncestorResource viewWriter controlDisposer nestingAdapter view props
+        createAncestorResource viewWriter controlDisposer nestingAdapter identity view props
         
-    let createButton props = 
+    let createButton identity props = 
         let button = UIButton.FromType(UIButtonType.System)
         let control = createControl button
-        createResource buttonWriter controlDisposer control props
+        createResource buttonWriter controlDisposer identity control props
 
-    let createLabel props =
+    let createLabel identity props =
         let label = new UILabel()
         let control = createControl label
-        createResource labelWriter controlDisposer control props
+        createResource labelWriter controlDisposer identity control props
 
     let registerResources() =
         Registry.register "Button" createButton
@@ -208,9 +217,10 @@ module iOS =
 
         let controllerResource = 
             Resources.createAncestorResource 
-                PropertyWriter.empty 
+                PropertyAccessor.accessor
                 disposer 
                 nestingAdapter
+                "rootView"
                 view
                 []
 

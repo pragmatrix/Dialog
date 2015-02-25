@@ -3,7 +3,7 @@
 open Reconciler
 
 (*
-    A property reconcilder that 
+    A property reconciler that 
         - is bound to a specific target
         - has a set of properties defined by the writer
         - stores the actual properties.
@@ -14,28 +14,18 @@ open Reconciler
         - combine _values and _properties dictionary
 *)
 
-type PropertyReconciler<'target>(writer : PropertyWriter<'target>, target : 'target) = 
+type PropertyReconciler<'target>(writer : PropertyAccessor<'target>, target : 'target, identity: string) = 
 
-    let mutable _properties = Dict<string, MountedProperty<'target>>()
+    let mutable _properties = Dict<string, MountedProperty>()
     
+    let mountProperty v = writer.mount target identity v
+
     let reconcile = 
         let functions = 
             {
-                add = fun _ _ v -> 
-                    writer.mount target v
-
-                update = fun _ _ mounted v -> 
-                    match mounted.update with
-                    | Some u -> 
-                        u v
-                        mounted
-                    | None ->
-                    // update fallback is remove and add
-                    mounted.remove()
-                    writer.mount target v
-                    
-                remove = fun _ mounted -> 
-                    mounted.remove()
+                add = fun _ k v -> mountProperty v
+                update = fun _ k mounted v -> mounted.update v
+                remove = fun k mounted -> mounted.unmount()
             }
 
         reconcile functions
