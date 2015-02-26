@@ -83,6 +83,7 @@ module private VDOM =
         match element.kind with
         | Component c ->
             let c = c.createComponent element.props
+            Trace.renderingComponent "" key
             let nested = c.render()
             let nestedKey = elementKey key 0 nested
             let nested = mount context 0 nestedKey nested
@@ -134,6 +135,7 @@ module private VDOM =
         match mounted.state, element.kind with
         | ComponentState c, Component eClass when obj.ReferenceEquals(c._class, eClass) ->
             let mounted = mounted.applyProps element.props
+            Trace.renderingComponent "" mounted.key
             let nested = c.render()
             reconcileNested context mounted [nested]
 
@@ -180,7 +182,7 @@ module private VDOM =
             reconcile context 0 root element
         | _ -> failwith "a mounted element at root must be a component"
 
-    let rootKey = ""
+    let rootKey = "/"
 
     type MountedRoot_ = 
         { 

@@ -14,8 +14,8 @@ module Trace =
 
     let private trace = Tracer.trace
 
-    let render componentName = 
-        componentName + ".render()"
+    let renderingComponent componentName componentKey = 
+        "rendering " + componentName + componentKey
         |> trace
     
     let mountingProperty resourceKey propertyName property = 
