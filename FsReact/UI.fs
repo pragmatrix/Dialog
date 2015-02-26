@@ -47,8 +47,8 @@ module UI =
         static member SpaceBetween = JustifyContent SpaceBetween
         static member SpaceAround = JustifyContent SpaceAround
 
-    let button text event p = native "Button" (Props.concat [Text text; OnClick event] p)
-    let text text p = native "Text" (Text text :> obj :: p)
-    let view c p = native "View" (Elements c :> obj :: p)
+    let button text event p = resource "Button" (Props.concat [Text text; OnClick event] p) []
+    let text text p = resource "Text" (Text text :> obj :: p) []
+    let view nested p = resource "View" p nested
 
     let mountRoot = VDOM.mountRoot 

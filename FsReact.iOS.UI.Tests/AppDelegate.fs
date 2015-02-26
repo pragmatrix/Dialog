@@ -1,15 +1,12 @@
 namespace FsReact.iOS.UI.Tests
 
-open System
 open UIKit
 open Foundation
 
 open FsReact
 open FsReact.iOS
 open FsReact.Core
-open FsReact.UI
 
-open CoreGraphics
 open ComponentTests
 
 [<Register ("AppDelegate")>]

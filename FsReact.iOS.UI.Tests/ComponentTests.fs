@@ -21,10 +21,8 @@ let counter =
         view [
             text ("counter: " + state.count.ToString()) []
             button ("Click to Count ") (this, ButtonClicked) []
-        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
-
-//        button (sprintf "Click to count %d" state.count) (this, ButtonClicked) [];
-
+        ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+        
     Core.createClass(initialState, update, render);
 
 let replaceRoot = 
@@ -66,5 +64,6 @@ let replaceNested =
             else 
                 yield button "Switch to A" (this, ButtonClicked) []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+
 
     Core.createClass(initialState, update, render)

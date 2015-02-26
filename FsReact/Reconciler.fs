@@ -12,6 +12,7 @@ type Dict<'k, 'v> = Dictionary<'k, 'v>
 
 module Dict = 
     let ofList (l : _ list) = l.ToDictionary(fst, snd)
+    let ofSeq (l : _ seq) = l.ToDictionary(fst, snd)
 
     let private deconstruct (kvp:KeyValuePair<_, _>) = kvp.Key, kvp.Value
     let toSeq (d:Dict<_,_>) = d |> seq |> Seq.map deconstruct

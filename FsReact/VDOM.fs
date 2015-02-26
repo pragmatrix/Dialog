@@ -2,7 +2,6 @@
 
 open Resources
 
-type Elements = Elements of Element list
 type Key = Key of string
 
 type MountedRoot = 
@@ -104,11 +103,10 @@ module private VDOM =
 
             let nestedContext = context.push state
             let nested = 
-                props 
-                |> Props.tryGetOr (function Elements nested -> nested) []
-                |> List.mapi (fun i element -> mount nestedContext i (elementKey key i element) element)
-                |> List.map (fun m -> m.key, m)
-                |> Dict.ofList
+                element.nested
+                |> Seq.mapi (fun i element -> mount nestedContext i (elementKey key i element) element)
+                |> Seq.map (fun m -> m.key, m)
+                |> Dict.ofSeq
             {
                 props = props;
                 key = key;
@@ -142,12 +140,7 @@ module private VDOM =
         | ResourceState ln, Native rn  when ln.name = rn ->
             ln.resource.update element.props
             let mounted = mounted.applyProps element.props
-
-            let nested = 
-                element.props
-                |> Props.ofList
-                |> Props.tryGetOr (function Elements nested -> nested) []
-                   
+            let nested = element.nested
             let nestedContext = context.push ln
             reconcileNested nestedContext mounted nested
 
@@ -183,7 +176,7 @@ module private VDOM =
     let updateRoot context root = 
         match root.state with
         | ComponentState c ->
-            let element = { Element.kind = Component c._class; props = root.props |> Props.toList }
+            let element = { Element.kind = Component c._class; props = root.props |> Props.toList; nested = [] }
             reconcile context 0 root element
         | _ -> failwith "a mounted element at root must be a component"
 

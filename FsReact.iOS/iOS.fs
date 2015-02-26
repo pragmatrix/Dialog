@@ -111,7 +111,6 @@ module iOS =
         |> defaultValue -- BackgroundColor Color.Transparent
         |> defaultValue -- AlignItems Auto
         |> defaultValue -- JustifyContent Start
-        |> writer -- fun _ (Elements _) -> ()
         |> writer --
             fun this (BackgroundColor color) ->
                 this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
@@ -126,13 +125,13 @@ module iOS =
                     | Align.Stretch -> CSSAlign.Stretch
         |> writer --
             fun this (JustifyContent justify) ->
-            this.css.JustifyContent <-
-                match justify with
-                | Justify.Start -> CSSJustify.FlexStart
-                | Justify.Center -> CSSJustify.Center
-                | Justify.End -> CSSJustify.FlexEnd
-                | Justify.SpaceBetween -> CSSJustify.SpaceBetween
-                | Justify.SpaceAround -> CSSJustify.SpaceAround
+                this.css.JustifyContent <-
+                    match justify with
+                    | Justify.Start -> CSSJustify.FlexStart
+                    | Justify.Center -> CSSJustify.Center
+                    | Justify.End -> CSSJustify.FlexEnd
+                    | Justify.SpaceBetween -> CSSJustify.SpaceBetween
+                    | Justify.SpaceAround -> CSSJustify.SpaceAround
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()

@@ -8,7 +8,7 @@ type ElementKind =
     | Component of ComponentClass
     | Native of string
 
-and Element = { kind: ElementKind; props: Properties }
+and Element = { kind: ElementKind; props: Properties; nested: Element list }
 
 and Component =
     abstract render : unit -> Element
@@ -60,9 +60,8 @@ module Core =
             render = render;
         }
 
-    let element c p = { kind = Component c; props = p }
-    let native name p = { kind = Native name; props = p }
-
+    let element c p = { kind = Component c; props = p; nested = [] }
+    let resource name p nested = { kind = Native name; props = p; nested = nested }
 
     (* Event Handdling *)
 
