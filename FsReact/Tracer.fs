@@ -2,9 +2,17 @@
 
 #if DEBUG
 
+module Tracer =
+
+    let mutable private tracer = System.Diagnostics.Debug.WriteLine
+
+    let set t = tracer <- t
+
+    let trace str = tracer str 
+
 module Trace = 
 
-    let private trace = System.Diagnostics.Debug.WriteLine
+    let private trace = Tracer.trace
 
     let render componentName = 
         componentName + ".render()"

@@ -4,6 +4,7 @@ open System
 open UIKit
 open Foundation
 
+open FsReact
 open FsReact.iOS
 open FsReact.Core
 open FsReact.UI
@@ -21,7 +22,8 @@ type AppDelegate () =
     let mutable _window = null
 
     override this.FinishedLaunching (app, options) =
-
+        Tracer.set (fun (str:string) -> System.Console.WriteLine str)
+    
         // can't make static initialization of F# modules work.       
         registerResources()
 
