@@ -11,8 +11,6 @@ type ResourceState = { name: string; resource: Resource }
     
 module private VDOM = 
 
-    let private debug = System.Diagnostics.Debug.WriteLine
-
     type Props = Props.Props
 
     open Reconciler
