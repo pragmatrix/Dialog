@@ -126,6 +126,7 @@
     <None Include="Info.plist" />
     <Compile Include="RootViewController.fs" />
     <Compile Include="ComponentTests.fs" />
+    <Compile Include="PopoverTests.fs" />
     <Compile Include="AppDelegate.fs" />
   </ItemGroup>
   <ItemGroup>

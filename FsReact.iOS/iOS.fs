@@ -12,6 +12,10 @@ open System.Collections.Generic
 
 module iOS =
 
+    type Convert = 
+        static member rect (r: CGRect) = 
+            { left = r.X |> float; top = r.Y |> float; width = r.Width |> float; height = r.Height |> float }
+
     open VDOM
 
     type Control(view: UIView, css: CSSNode) = 
@@ -75,8 +79,14 @@ module iOS =
     open PropertyAccessor
 
     let mkHandler handler = EventHandler handler
+    let mkEvent target msg reader = { message = msg; props = []; sender = ResourceReference(target, reader) }
 
-    let buttonWriter = 
+    let buttonReader = 
+        readerFor<Control<UIButton>>
+        |> reader --
+            fun this -> this.view.Frame |> Convert.rect |> Frame
+
+    let buttonAccessor = 
         accessor<Control<UIButton>>
         |> defaultValue -- Text ""
         |> writer --
@@ -91,12 +101,12 @@ module iOS =
                 this.css.StyleWidth <- this.view.Bounds.Width |> float32
                 this.css.StyleHeight <- this.view.Bounds.Height |> float32
         |> mounter --
-            fun this (OnClick e) ->
-                let handler = mkHandler -- fun o ea -> dispatchEvent e
+            fun this (OnClick (comp, msg)) ->
+                let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg buttonReader
                 this.view.TouchUpInside.AddHandler handler
                 fun () -> this.view.TouchUpInside.RemoveHandler handler
 
-    let labelWriter = 
+    let labelAccessor = 
         accessor<Control<UILabel>>
         |> defaultValue -- Text ""
         |> writer --
@@ -106,7 +116,7 @@ module iOS =
                 this.css.StyleWidth <- this.view.Bounds.Width |> float32
                 this.css.StyleHeight <- this.view.Bounds.Height |> float32
 
-    let viewWriter = 
+    let viewAccessor = 
         accessor<View>
         |> defaultValue -- BackgroundColor Color.Transparent
         |> defaultValue -- AlignItems Auto
@@ -157,24 +167,24 @@ module iOS =
         let nestingAdapter = 
             NestingAdapter(mounter, unmounter)
 
-        createAncestorResource viewWriter controlDisposer nestingAdapter identity view props
+        createAncestorResource viewAccessor controlDisposer nestingAdapter identity view props
         
     let createButton identity props = 
         let button = UIButton.FromType(UIButtonType.System)
         let control = createControl button
-        createResource buttonWriter controlDisposer identity control props
+        createResource buttonAccessor controlDisposer identity control props
 
     let createLabel identity props =
         let label = new UILabel()
         let control = createControl label
-        createResource labelWriter controlDisposer identity control props
+        createResource labelAccessor controlDisposer identity control props
 
     let registerResources() =
         Registry.register "Button" createButton
         Registry.register "Text" createLabel
         Registry.register "View" createView
 
-    let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component, event) = 
+    let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
         comp.dispatchEvent event
         root.update()
         

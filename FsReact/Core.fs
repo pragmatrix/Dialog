@@ -4,6 +4,13 @@ open System.Collections.Generic
 
 type Properties = obj list
 
+type Reference = 
+    abstract get : ('property -> 'value) -> 'value
+
+type Event<'event> = { message: 'event; props: Properties; sender: Reference }
+    with 
+    member this.unboxed() = { message = this.message |> unbox; props = this.props; sender = this.sender }
+
 type ElementKind = 
     | Component of ComponentClass
     | Native of string
@@ -12,7 +19,7 @@ and Element = { kind: ElementKind; props: Properties; nested: Element list }
 
 and Component =
     abstract render : unit -> Element
-    abstract dispatchEvent : obj -> unit
+    abstract dispatchEvent : Event<obj> -> unit
     abstract _class : ComponentClass
 
 and ComponentClass = 
@@ -28,13 +35,13 @@ type Component<'event, 'state> =
         member this._class = this._class :> _
         member this.render() = this._class.render this
         member this.dispatchEvent event =
-            this.state <- this._class.update this (event :?> 'event, [])
+            this.state <- this._class.update this (event.unboxed())
 
 and ComponentClass<'event, 'state> =
     { 
         getInitialState : unit -> 'state; 
         getDefaultProps : unit -> Properties;
-        update : Component<'event, 'state> -> 'event * Properties -> 'state;
+        update : Component<'event, 'state> -> Event<'event> -> 'state;
         render: Component<'event, 'state> -> Element
     }
     interface ComponentClass
@@ -52,20 +59,20 @@ module Core =
 
     (* Components *)
 
-    let createClass<'event, 'state>(getInitialState, handleChange, render) : ComponentClass<'event, 'state> = 
+    let createClass<'event, 'state>(getInitialState, update, render) : ComponentClass<'event, 'state> = 
         { 
             getInitialState = getInitialState;
             getDefaultProps = fun () -> [];
-            update = handleChange;
+            update = update;
             render = render;
         }
 
     let element c p = { kind = Component c; props = p; nested = [] }
     let resource name p nested = { kind = Native name; props = p; nested = nested }
 
-    (* Event Handdling *)
+    (* Event Handling *)
 
-    type EventRoot = (Component * obj) -> unit
+    type EventRoot = Component -> Event<obj> -> unit
 
     let private _eventRoots = HashSet<EventRoot>()
 
@@ -76,8 +83,8 @@ module Core =
             let r = _eventRoots.Remove f
             assert(r)
 
-    let dispatchEvent event = 
+    let dispatchEvent target (e : Event<obj>) = 
         // take a copy here, _eventRoots may change while dispatching the events
         _eventRoots 
         |> Seq.toArray
-        |> Array.iter (fun f -> f event)
+        |> Array.iter (fun f -> f target e)

@@ -12,7 +12,6 @@ module Resources =
         abstract mountNested : int -> Resource -> unit
         abstract unmountNested : Resource -> unit
 
-
     type Resource<'resource>
         (
             identity: string,
@@ -30,7 +29,6 @@ module Resources =
             member __.mountNested index nested = nestingAdapter.mount instance index nested.instance
             member __.unmountNested nested = nestingAdapter.unmount instance nested.instance
 
-
     let createResource writer disposer identity instance initialProps = 
         let r = new Resource<_>(identity, instance, writer, NestingAdapter.invalid(), disposer)
         (r :> Resource).update initialProps
@@ -40,6 +38,14 @@ module Resources =
         let r = new Resource<_>(identity, instance, writer, nestingAdapter.promoteNested(), disposer)
         (r :> Resource).update initialProps
         r
+
+    (* Resource references *)
+
+    type ResourceReference<'target>(target: 'target, reader: PropertyReader<'target>) = 
+        interface Reference with
+            override this.get deconstructor = reader.read target deconstructor
+
+    (* Registration of resource constructors *)
 
     let mutable private registry = Map.empty
 

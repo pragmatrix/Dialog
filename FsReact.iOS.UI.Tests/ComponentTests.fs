@@ -10,9 +10,9 @@ let counter =
 
     let initialState () = { count = 0 }
 
-    let update this (e, _) =
+    let update this e =
         let state = this.state
-        match e with 
+        match e.message with 
         | ButtonClicked -> { state with count = state.count+1 }
 
     let render this = 
@@ -29,9 +29,9 @@ let replaceRoot =
 
     let initialState () = { count = 0 }
 
-    let update this (e, _) = 
+    let update this e = 
         let state = this.state
-        match e with 
+        match e.message with 
         | ButtonClicked -> { state with count = state.count+1 }
 
     let render this = 
@@ -45,14 +45,15 @@ let replaceRoot =
 
     Core.createClass(initialState, update, render)
 
+let inline ( -- ) l r = l r
 
 let replaceNested = 
 
     let initialState () = { count = 0 }
 
-    let update this (e, _) = 
+    let update this e = 
         let state = this.state
-        match e with 
+        match e.message with 
         | ButtonClicked -> { state with count = state.count+1 }
 
     let render this = 
@@ -63,6 +64,31 @@ let replaceNested =
                 yield button "Switch to B" (this, ButtonClicked) []
             else 
                 yield button "Switch to A" (this, ButtonClicked) []
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+
+
+    Core.createClass(initialState, update, render)
+
+
+type RectState = { rect: Rect option }
+
+let rectFromEvent = 
+
+    let initialState () = { rect= None }
+
+    let update this e = 
+        let state = this.state
+        match e.message with 
+        | ButtonClicked -> 
+            let f = e.sender.get -- function Frame f -> f
+            { state with rect = Some f }
+
+    let render this = 
+        let state = this.state
+
+        view [
+            button "Switch to B" (this, ButtonClicked) []
+            text (sprintf "rect of button: %A"  state.rect) []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
 

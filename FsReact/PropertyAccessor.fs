@@ -1,5 +1,21 @@
 ﻿namespace FsReact
 
+(*
+
+*)
+
+type PropertyReader<'target> = 
+    {
+        readers: Map<string, 'target -> obj>
+    }
+    with
+    member this.read (target: 'target) (decon: 'property -> 'value) : 'value = 
+        let name = typedefof<'property>.Name
+        match this.readers.TryFind name with
+        | Some reader -> reader target |> unbox |> decon
+        | None ->
+        failwithf "type '%s' does not support reading property '%s'" typedefof<'target>.Name name
+       
 (* 
     Defines property modification functions for a specific target
 
@@ -70,7 +86,7 @@ type PropertyAccessor<'target> =
                         Trace.unmountedProperty identity name
             }
         | None ->
-            failwithf "native type '%s' does not support property '%s'" typedefof<'target>.Name name
+            failwithf "native type '%s' does not support mounting / writing property '%s'" typedefof<'target>.Name name
 
 (*
     member this.derived() : PropertyWriter<'derived> = 
@@ -83,6 +99,18 @@ type PropertyAccessor<'target> =
 module PropertyAccessor =
 
     let inline ( -- ) l r = l r
+
+    // reader
+
+    let readerFor<'target> : PropertyReader<'target> = 
+        { readers = Map.empty }
+
+    let reader (f: 'target -> 'property) (this: PropertyReader<'target>) =
+        let name = typedefof<'property>.Name
+        let reader target = f target |> box
+        { this with readers = this.readers.Add(name, reader) }
+
+    // writer
 
     let accessor<'target> : PropertyAccessor<'target> = 
         { mounters = Map.empty; writers = Map.empty; defaultValues = Map.empty }

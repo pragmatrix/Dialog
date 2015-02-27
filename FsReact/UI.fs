@@ -7,6 +7,14 @@ module UI =
     type Text = Text of string
     type OnClick = OnClick of (Component * obj)
 
+    type Rect = { left: float; top: float; width: float; height: float }
+        with
+        member this.right = this.left + this.width
+        member this.bottom = this.top + this.height
+
+    type Frame = Frame of Rect
+    type Implementation = Implementation of obj
+
     type Color = { red: float; green: float; blue: float; alpha: float }
         with
         static member White = { red = 1.0; green = 1.0; blue = 1.0; alpha = 1.0 }
