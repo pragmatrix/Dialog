@@ -46,28 +46,33 @@ module private VDOM =
             | ResourceState r -> mkIdentity r.name this.key
             | ComponentState _ -> this.key
 
-    type Context = { states: ResourceState list }
+    type Context = { elements: MountedElement list; resources: ResourceState list; path: string list }
         with
         member this.mountNested index nested =
-            match this.states with
+            match this.resources with
             | [] -> failwithf "failed to mount nested resource %s, no ancestor" (nested.ToString())
             | ancestor :: _ -> 
             ancestor.resource.mountNested index nested.resource
 
         member this.unmountNested nested = 
-            match this.states with
+            match this.resources with
             | [] -> failwithf "failed to unmount nested resource %s, no ancestor" (nested.ToString())
             | ancestor :: _ -> 
             ancestor.resource.unmountNested nested.resource
 
-        member this.extend state = 
-            { this with states = state :: this.states }
+        member this.extend element = 
+            let resources = 
+                match element.state with
+                | ResourceState r -> r :: this.resources
+                | ComponentState _ -> this.resources
 
-        member this.head = 
-            this.states |> List.head
-
-        static member empty = { states = [] }
-
+            { this with elements = element :: this.elements; resources = resources; path = element.key :: this.path }
+            
+        static member empty = { elements = []; resources = []; path = [] }
+        static member root root = 
+            let r = Context.empty
+            r.extend root
+         
     let derivedKey key (i:int) = key + "." + (i |> string)
 
     let elementKey key i (element:Element) = 
@@ -77,23 +82,23 @@ module private VDOM =
 
     let rec mount (context: Context) index (key:string) (element : Element) : MountedElement = 
 
-        let context, state, nested = 
+        let state, nested = 
             match element.kind with
             | Component c ->
                 let c = c.createComponent element.props
                 Trace.renderingComponent "" key
 
-                context, ComponentState c, [c.render()]
+                ComponentState c, [c.render()]
 
             | Native name ->
                 let identity = mkIdentity name key
                 let resource = Registry.createResource name identity element.props
                 let state = { name = name; resource = resource }
 
-                Trace.mountingResource context.head.name index identity
+                Trace.mountingResource ((context.resources |> List.head).name) index identity
                 context.mountNested index state
 
-                context.extend state, ResourceState state, element.nested
+                ResourceState state, element.nested
 
         let mounted = 
             {
@@ -103,20 +108,19 @@ module private VDOM =
                 nested = Dict.ofList []
             }
 
+        let context = context.extend(mounted)
+
         reconcileNested context mounted nested
 
     and unmount (context: Context) (mounted: MountedElement) =
-        let nestedContext = 
-            match mounted.state with
-            | ResourceState r -> context.extend r
-            | ComponentState _ -> context
 
+        let nestedContext = context.extend mounted
         let mounted = reconcileNested nestedContext mounted []
 
         match mounted.state with
         | ResourceState r ->
             context.unmountNested r
-            Trace.unmountedResource context.head.name mounted.identity
+            Trace.unmountedResource (context.resources |> List.head).name mounted.identity
         | ComponentState _ -> ()
 
         mounted.state.unmount()
@@ -133,7 +137,7 @@ module private VDOM =
             ln.resource.update element.props
             let mounted = mounted.applyProps element.props
             let nested = element.nested
-            let nestedContext = context.extend ln
+            let nestedContext = context.extend mounted
             reconcileNested nestedContext mounted nested
 
         | _ ->
@@ -184,8 +188,8 @@ module private VDOM =
             member this.update() = this.root <- updateRoot this.context this.root
 
     let mountRoot resource element = 
-        let context = Context.empty
-        let context = context.extend resource
+        let root = { key = rootKey; props = Props.ofList []; state = ResourceState resource; nested = Dict.ofList [] }
+        let context = Context.root root
         let mounted = mount context 0 rootKey element
         { context = context; root = mounted } :> MountedRoot
 
