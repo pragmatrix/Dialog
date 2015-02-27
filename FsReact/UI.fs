@@ -5,6 +5,7 @@ module UI =
     open FsReact.Core
 
     type Text = Text of string
+    type Title = Title of string
     type OnClick = OnClick of (Component * obj)
 
     type Rect = { left: float; top: float; width: float; height: float }
@@ -13,7 +14,7 @@ module UI =
         member this.bottom = this.top + this.height
 
     type Frame = Frame of Rect
-    type Implementation = Implementation of obj
+    type Anchor = Anchor of Reference
 
     type Color = { red: float; green: float; blue: float; alpha: float }
         with
@@ -58,5 +59,7 @@ module UI =
     let button text event p = resource "Button" (Props.concat [Text text; OnClick event] p) []
     let text text p = resource "Text" (Text text :> obj :: p) []
     let view nested p = resource "View" p nested
+
+    let popover title nested p = resource "Popover" (Title title :> obj :: p) nested
 
     let mountRoot = VDOM.mountRoot 

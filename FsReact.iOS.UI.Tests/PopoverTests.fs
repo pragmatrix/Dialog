@@ -1,29 +1,31 @@
-﻿
-module PopoverTests
-(*
+﻿module PopoverTests
 
 open FsReact
 open FsReact.UI
 
-type PopoverTestState = { popoverSource: Reference }
+type PopoverTestState = { anchor: Reference option }
+type ButtonClicked = | ButtonClicked
 
 let popoverTest = 
 
-    let initialState () = { popover = None }
+    let initialState () = { anchor = None }
 
-    let update this (e, _) = 
+    let update this e = 
         let state = this.state
-        match e with 
-        | ButtonClicked -> { state with count = state.count+1 }
-        this.getId(
-
-
+        match e.message with 
+        | ButtonClicked -> { state with anchor = Some e.sender }
 
     let render this = 
         let state = this.state
 
-        button "Show Popover" (this, ButtonClicked) []
-            
-    Core.createClass(initialState, update, render)
+        view [
+            yield button "Show Popover" (this, ButtonClicked) []
+            match state.anchor with
+            | Some anchor ->
+                yield popover "This is a popover" [
+                    text "Popover Content" []
+                ] [Anchor anchor]
+            | None -> ()
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
-*)
+    Core.createClass(initialState, update, render)

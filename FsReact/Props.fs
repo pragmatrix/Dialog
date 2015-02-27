@@ -49,5 +49,10 @@ module Props =
 
         tg props
 
+    let getFromList (f: 'property -> 'value) (props: Properties) =
+        match tryGetFromList f props with
+        | Some p -> p
+        | None ->         
+        failwithf "Property %A not found" (typedefof<'property>.Name)
 
                  

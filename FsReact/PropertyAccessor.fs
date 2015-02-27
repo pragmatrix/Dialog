@@ -15,6 +15,17 @@ type PropertyReader<'target> =
         | Some reader -> reader target |> unbox |> decon
         | None ->
         failwithf "type '%s' does not support reading property '%s'" typedefof<'target>.Name name
+
+    member this.extend (parent: PropertyReader<'parent>) : PropertyReader<'target> =
+        let promoteReader f = 
+            fun t -> t |> box |> unbox |> f
+
+        let promotedReaders = 
+            parent.readers 
+            |> Map.toSeq 
+            |> Seq.map (fun (s, f) -> (s, promoteReader f) )
+
+        { readers = promotedReaders |> Seq.fold (fun m (k, v) -> m.Add(k, v)) this.readers }
        
 (* 
     Defines property modification functions for a specific target

@@ -8,6 +8,7 @@ open FsReact.iOS
 open FsReact.Core
 
 open ComponentTests
+open PopoverTests
 
 [<Register ("AppDelegate")>]
 type AppDelegate () =
@@ -24,7 +25,7 @@ type AppDelegate () =
         // can't make static initialization of F# modules work.       
         registerResources()
 
-        let createView() = renderAsView (element rectFromEvent [])
+        let createView() = renderAsView (element popoverTest [])
         
         _window <- new UIWindow (UIScreen.MainScreen.Bounds)
 

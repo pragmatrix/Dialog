@@ -12,11 +12,18 @@ open System.Collections.Generic
 
 module iOS =
 
+    let private nf (v:float) = nfloat(v)
+
     type Convert = 
         static member rect (r: CGRect) = 
             { left = r.X |> float; top = r.Y |> float; width = r.Width |> float; height = r.Height |> float }
+        static member rect (r: Rect) = 
+            CGRect(nf r.left, nf r.top, nf r.width, nf r.height)
 
     open VDOM
+
+
+    type IOSView = IOSView of UIView
 
     type Control(view: UIView, css: CSSNode) = 
         member this.view = view
@@ -81,8 +88,13 @@ module iOS =
     let mkHandler handler = EventHandler handler
     let mkEvent target msg reader = { message = msg; props = []; sender = ResourceReference(target, reader) }
 
+    let controlReader = 
+        readerFor<Control>
+        |> reader --
+            fun this -> IOSView this.view
+
     let buttonReader = 
-        readerFor<Control<UIButton>>
+        readerFor<Control<UIButton>>.extend controlReader
         |> reader --
             fun this -> this.view.Frame |> Convert.rect |> Frame
 
@@ -179,20 +191,6 @@ module iOS =
         let control = createControl label
         createResource labelAccessor controlDisposer identity control props
 
-    let registerResources() =
-        Registry.register "Button" createButton
-        Registry.register "Text" createLabel
-        Registry.register "View" createView
-
-    let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
-        comp.dispatchEvent event
-        root.update()
-        
-    let private registerEventRoot mountedRoot = 
-        registerEventRoot (dispatchEventAndUpdate mountedRoot)
-
-    let debug = System.Diagnostics.Debug.WriteLine
-
     type UIRootView() = 
         inherit UIView()
 
@@ -211,6 +209,61 @@ module iOS =
             let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
             ourView.Frame <- frame
 
+    type Popover(props: Properties) = 
+        let _rootView = new UIRootView()
+        let _contained = new UIViewController()
+        let _controller = new UIPopoverController(_contained)
+        
+        do
+            _contained.View <- _rootView
+            let ref = props |> Props.getFromList (function Anchor ref -> ref)
+            let refFrame = ref.get (function Frame f -> f)
+            let refView = ref.get (function IOSView v -> v)
+
+            _controller.PresentFromRect (Convert.rect refFrame, refView, UIPopoverArrowDirection.Any, true)
+        with
+        member this.rootView = _rootView
+        member this.containedController = _contained
+        member this.dismiss() = _controller.Dismiss(true)
+
+    let popoverWriter = 
+        accessor<Popover>
+        |> writer (fun this (Title t) -> this.containedController.Title <- t)
+
+    let popoverAdapter : NestingAdapter<Popover, Control> = 
+        let mounter (this: Popover) index (nested: Control) =
+            this.rootView.setView(nested.view)
+        let unmounter (this: Popover) (nested: Control) =
+            this.rootView.clearView()
+        NestingAdapter(mounter, unmounter)
+
+    let createPopover identity props =
+    
+        let popover = new Popover(props)
+
+        Resources.createAncestorResource
+            popoverWriter
+            (fun (popover : Popover) -> popover.dismiss())
+            popoverAdapter
+            identity
+            popover
+            []
+
+    let registerResources() =
+        Registry.register "Button" createButton
+        Registry.register "Text" createLabel
+        Registry.register "View" createView
+        Registry.register "Popover" createPopover
+
+    let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
+        comp.dispatchEvent event
+        root.update()
+        
+    let private registerEventRoot mountedRoot = 
+        registerEventRoot (dispatchEventAndUpdate mountedRoot)
+
+    let debug = System.Diagnostics.Debug.WriteLine
+
 
     let renderAsView element = 
         let view = new UIRootView()
@@ -224,7 +277,7 @@ module iOS =
         let nestingAdapter = NestingAdapter(mountView, unmountView)
         let disposer _ = ()
 
-        let controllerResource = 
+        let viewResource = 
             Resources.createAncestorResource 
                 PropertyAccessor.accessor
                 disposer 
@@ -233,17 +286,11 @@ module iOS =
                 view
                 []
 
-        let controllerState = { name="UIRootView"; resource = controllerResource }
+        let viewState = { name="UIRootView"; resource = viewResource }
 
-        let mounted = UI.mountRoot controllerState element
+        let mounted = UI.mountRoot viewState element
         registerEventRoot mounted |> ignore
         view :> UIView
-
-    let renderToController element (target : UIViewController) =
-        if target.IsViewLoaded then
-            failwith "FsReact can only render to an UIViewController that has no view yet."
-
-        target.View <- renderAsView element
 
 (*
     let renderToView element (target : UIView) = 
