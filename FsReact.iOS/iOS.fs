@@ -217,7 +217,9 @@ module iOS =
             let refFrame = ref.get (function Frame f -> f)
             let refView = ref.get (function IOSView v -> v)
 
-            _controller.PresentFromRect (Convert.rect refFrame, refView, UIPopoverArrowDirection.Any, true)
+            let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
+            
+            _controller.PresentFromRect (Convert.rect localFrame, refView, UIPopoverArrowDirection.Any, true)
         with
         member this.rootView = _rootView
         member this.containedController = _contained
@@ -244,7 +246,7 @@ module iOS =
             popoverAdapter
             identity
             popover
-            []
+            props
 
     let registerResources() =
         Registry.register "Button" createButton
