@@ -98,6 +98,15 @@ module iOS =
         |> reader --
             fun this -> this.view.Frame |> Convert.rect |> Frame
 
+    let eventMounter reader f accessor = 
+        accessor
+        |> mounter --
+            fun this e ->
+                let (comp, msg), (e:IEvent<_, _>) = f this e
+                let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg reader
+                e.AddHandler handler
+                fun () -> e.RemoveHandler handler
+
     let buttonAccessor = 
         accessor<Control<UIButton>>
         |> defaultValue -- Text ""
@@ -112,11 +121,14 @@ module iOS =
 
                 this.css.StyleWidth <- this.view.Bounds.Width |> float32
                 this.css.StyleHeight <- this.view.Bounds.Height |> float32
+(*
         |> mounter --
             fun this (OnClick (comp, msg)) ->
                 let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg buttonReader
                 this.view.TouchUpInside.AddHandler handler
                 fun () -> this.view.TouchUpInside.RemoveHandler handler
+*)
+        |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
     let labelAccessor = 
         accessor<Control<UILabel>>
@@ -213,13 +225,13 @@ module iOS =
         do
             _contained.View <- _rootView
 
-        member val anchor = None
+        member val anchor : Reference option = None with get, set
 
         interface MountingNotifications with
             member this.mounted() = 
                 match this.anchor with
                 | None -> ()
-                | Some (Anchor ref) ->
+                | Some ref ->
                 let refFrame = ref.get (function Frame f -> f)
                 let refView = ref.get (function IOSView v -> v)
 
@@ -233,11 +245,24 @@ module iOS =
         with
         member this.rootView = _rootView
         member this.containedController = _contained
+        member this.controller = _controller
         
+    let popoverReader = 
+        readerFor<Popover>
+
     let popoverWriter = 
         accessor<Popover>
         |> writer -- fun this (Title t) -> this.containedController.Title <- t
-
+        |> mounter --
+            // this is probably a common pattern to abstract the lifetime of a property int
+            // an option type.
+            // also a property-mirror could be interesting, what about using attributes to specify properties?
+            fun this (Anchor a) -> 
+                this.anchor <- Some a
+                fun () -> 
+                this.anchor <- None
+        |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
+            
     let popoverAdapter = 
         let mounter (this: Popover) index (nested: Control) =
             this.rootView.setView(nested.view)

@@ -7,6 +7,7 @@ module UI =
     type Text = Text of string
     type Title = Title of string
     type OnClick = OnClick of (Component * obj)
+    type OnDismissed = OnDismissed of (Component * obj)
 
     type Rect = { left: float; top: float; width: float; height: float }
         with
@@ -60,6 +61,6 @@ module UI =
     let text text p = resource "Text" (Text text :> obj :: p) []
     let view nested p = resource "View" p nested
 
-    let popover title nested p = resource "Popover" (Title title :> obj :: p) nested
+    let popover title dismissed nested p = resource "Popover" (Props.concat [Title title; OnDismissed dismissed] p) nested
 
     let mountRoot = VDOM.mountRoot 
