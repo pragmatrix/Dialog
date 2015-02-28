@@ -9,6 +9,7 @@ module Resources =
         inherit IDisposable
         abstract update : Properties -> unit
         abstract instance : obj
+        abstract canMountNested : Resource -> bool
         abstract mountNested : int -> Resource -> unit
         abstract unmountNested : Resource -> unit
 
@@ -17,7 +18,7 @@ module Resources =
             identity: string,
             instance: 'resource,
             writer: PropertyAccessor<'resource>, 
-            nestingAdapter: NestingAdapter<'resource, obj>,
+            nestingAdapter: NestingAdapter<'resource>,
             disposer: 'resource -> unit
         ) =
 
@@ -26,16 +27,17 @@ module Resources =
             member __.instance = instance :> obj
             member __.update props = reconciler.update props
             member __.Dispose() = disposer instance
+            member __.canMountNested nested = nestingAdapter.canMount nested.instance
             member __.mountNested index nested = nestingAdapter.mount instance index nested.instance
             member __.unmountNested nested = nestingAdapter.unmount instance nested.instance
 
     let createResource writer disposer identity instance initialProps = 
-        let r = new Resource<_>(identity, instance, writer, NestingAdapter.invalid(), disposer)
+        let r = new Resource<_>(identity, instance, writer, NestingAdapter<_>.invalid(), disposer)
         (r :> Resource).update initialProps
         r
 
-    let createAncestorResource writer disposer (nestingAdapter: NestingAdapter<'target, 'nested>) identity instance initialProps = 
-        let r = new Resource<_>(identity, instance, writer, nestingAdapter.promoteNested(), disposer)
+    let createAncestorResource writer disposer (mounter, unmounter) identity instance initialProps = 
+        let r = new Resource<_>(identity, instance, writer, NestingAdapter<_, _>(mounter, unmounter), disposer)
         (r :> Resource).update initialProps
         r
 

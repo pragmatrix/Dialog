@@ -46,32 +46,44 @@ module private VDOM =
             | ResourceState r -> mkIdentity r.name this.key
             | ComponentState _ -> this.key
 
-    type Context = { elements: MountedElement list; resources: ResourceState list; path: string list }
+    type Context = { parent: Context option; element: MountedElement }
         with
+        member this.resource =
+            this.resources |> Seq.head
+
+        member this.resources = 
+            seq {
+                yield!
+                    match this.element.state with
+                    | ResourceState rs -> [rs]
+                    | _ -> []
+
+                match this.parent with
+                | Some c -> yield! c.resources
+                | None -> ()
+            }
+
+        member this.canMountNested nested = 
+            let nested = nested.resource
+            this.resources 
+            |> Seq.exists (fun r -> r.resource.canMountNested nested)
+
         member this.mountNested index nested =
-            match this.resources with
-            | [] -> failwithf "failed to mount nested resource %s, no ancestor" (nested.ToString())
-            | ancestor :: _ -> 
-            ancestor.resource.mountNested index nested.resource
+            let nested = nested.resource
+            this.resources 
+            |> Seq.find (fun r -> r.resource.canMountNested nested)
+            |> fun r -> r.resource.mountNested index nested
 
         member this.unmountNested nested = 
-            match this.resources with
-            | [] -> failwithf "failed to unmount nested resource %s, no ancestor" (nested.ToString())
-            | ancestor :: _ -> 
-            ancestor.resource.unmountNested nested.resource
+            let nested = nested.resource
+            this.resources
+            |> Seq.find (fun r -> r.resource.canMountNested nested)
+            |> fun r -> r.resource.unmountNested nested
 
         member this.extend element = 
-            let resources = 
-                match element.state with
-                | ResourceState r -> r :: this.resources
-                | ComponentState _ -> this.resources
-
-            { this with elements = element :: this.elements; resources = resources; path = element.key :: this.path }
+            { parent = Some this; element = element }
             
-        static member empty = { elements = []; resources = []; path = [] }
-        static member root root = 
-            let r = Context.empty
-            r.extend root
+        static member root root = { parent= None; element = root }
          
     let derivedKey key (i:int) = key + "." + (i |> string)
 
@@ -95,8 +107,9 @@ module private VDOM =
                 let resource = Registry.createResource name identity element.props
                 let state = { name = name; resource = resource }
 
-                Trace.mountingResource ((context.resources |> List.head).name) index identity
-                context.mountNested index state
+                if (context.canMountNested state) then
+                    Trace.mountingResource context.resource.name index identity
+                    context.mountNested index state
 
                 ResourceState state, element.nested
 
@@ -119,8 +132,9 @@ module private VDOM =
 
         match mounted.state with
         | ResourceState r ->
-            context.unmountNested r
-            Trace.unmountedResource (context.resources |> List.head).name mounted.identity
+            if (context.canMountNested r) then
+                context.unmountNested r
+                Trace.unmountedResource context.resource.name mounted.identity
         | ComponentState _ -> ()
 
         mounted.state.unmount()

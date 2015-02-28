@@ -176,10 +176,7 @@ module iOS =
             nested.view.RemoveFromSuperview()
             nested.css.RemoveSelf()
 
-        let nestingAdapter = 
-            NestingAdapter(mounter, unmounter)
-
-        createAncestorResource viewAccessor controlDisposer nestingAdapter identity view props
+        createAncestorResource viewAccessor controlDisposer (mounter, unmounter) identity view props
         
     let createButton identity props = 
         let button = UIButton.FromType(UIButtonType.System)
@@ -230,12 +227,12 @@ module iOS =
         accessor<Popover>
         |> writer (fun this (Title t) -> this.containedController.Title <- t)
 
-    let popoverAdapter : NestingAdapter<Popover, Control> = 
+    let popoverAdapter = 
         let mounter (this: Popover) index (nested: Control) =
             this.rootView.setView(nested.view)
         let unmounter (this: Popover) (nested: Control) =
             this.rootView.clearView()
-        NestingAdapter(mounter, unmounter)
+        mounter, unmounter
 
     let createPopover identity props =
     
@@ -274,7 +271,7 @@ module iOS =
         let unmountView (view : UIRootView) (control:Control) = 
             view.clearView()
 
-        let nestingAdapter = NestingAdapter(mountView, unmountView)
+        let nestingAdapter = mountView, unmountView
         let disposer _ = ()
 
         let viewResource = 
