@@ -206,28 +206,37 @@ module iOS =
             let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
             ourView.Frame <- frame
 
-    type Popover(props: Properties) = 
+    type Popover() = 
         let _rootView = new UIRootView()
         let _contained = new UIViewController()
         let _controller = new UIPopoverController(_contained)
-        
         do
             _contained.View <- _rootView
-            let ref = props |> Props.getFromList (function Anchor ref -> ref)
-            let refFrame = ref.get (function Frame f -> f)
-            let refView = ref.get (function IOSView v -> v)
 
-            let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
+        member val anchor = None
+
+        interface MountingNotifications with
+            member this.mounted() = 
+                match this.anchor with
+                | None -> ()
+                | Some (Anchor ref) ->
+                let refFrame = ref.get (function Frame f -> f)
+                let refView = ref.get (function IOSView v -> v)
+
+                let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
             
-            _controller.PresentFromRect (Convert.rect localFrame, refView, UIPopoverArrowDirection.Any, true)
+                _controller.PresentFromRect (Convert.rect localFrame, refView, UIPopoverArrowDirection.Any, true)
+
+            member this.unmounting() =
+                _controller.Dismiss(true)
+
         with
         member this.rootView = _rootView
         member this.containedController = _contained
-        member this.dismiss() = _controller.Dismiss(true)
-
+        
     let popoverWriter = 
         accessor<Popover>
-        |> writer (fun this (Title t) -> this.containedController.Title <- t)
+        |> writer -- fun this (Title t) -> this.containedController.Title <- t
 
     let popoverAdapter = 
         let mounter (this: Popover) index (nested: Control) =
@@ -238,11 +247,11 @@ module iOS =
 
     let createPopover identity props =
     
-        let popover = new Popover(props)
+        let popover = new Popover()
 
         Resources.createAncestorResource
             popoverWriter
-            (fun (popover : Popover) -> popover.dismiss())
+            (fun _ -> ())
             popoverAdapter
             identity
             popover

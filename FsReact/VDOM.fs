@@ -46,6 +46,16 @@ module private VDOM =
             | ResourceState r -> mkIdentity r.name this.key
             | ComponentState _ -> this.key
 
+        member this.notifyMounted() =
+            match this.state with
+            | ResourceState r -> r.resource.notifyMounted()
+            | _ -> ()
+
+        member this.notifyUnmounting() =
+            match this.state with
+            | ResourceState r -> r.resource.notifyUnmounting()
+            | _ -> ()
+
     type Context = { parent: Context option; element: MountedElement }
         with
         member this.resource =
@@ -123,9 +133,13 @@ module private VDOM =
 
         let context = context.extend(mounted)
 
-        reconcileNested context mounted nested
+        let mounted : MountedElement = reconcileNested context mounted nested
+        mounted.notifyMounted()
+        mounted
 
     and unmount (context: Context) (mounted: MountedElement) =
+
+        mounted.notifyUnmounting()
 
         let nestedContext = context.extend mounted
         let mounted = reconcileNested nestedContext mounted []
