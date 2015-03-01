@@ -63,4 +63,4 @@ module UI =
 
     let popover title dismissed nested p = resource "Popover" (Props.concat [Title title; OnDismissed dismissed] p) nested
 
-    let mountRoot = VDOM.mountRoot 
+    let mountRoot = Resources.mountRoot 

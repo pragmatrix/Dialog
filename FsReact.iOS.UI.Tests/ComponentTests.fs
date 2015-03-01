@@ -69,6 +69,19 @@ let replaceNested =
 
     Core.createClass(initialState, update, render)
 
+let twoComponents : ComponentClass<unit, unit> = 
+    let initialState() = ()
+
+    let update update this = ()
+
+    let render this = 
+        view [
+            Core.element counter []
+            Core.element replaceNested []
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center ]
+
+
+    Core.createClass(initialState, update, render)
 
 type RectState = { rect: Rect option }
 

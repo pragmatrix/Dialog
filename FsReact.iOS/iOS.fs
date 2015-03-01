@@ -20,9 +20,6 @@ module iOS =
         static member rect (r: Rect) = 
             CGRect(nf r.left, nf r.top, nf r.width, nf r.height)
 
-    open VDOM
-
-
     type IOSView = IOSView of UIView
 
     type Control(view: UIView, css: CSSNode) = 
@@ -174,6 +171,10 @@ module iOS =
     let createControl view = 
         Control<_>(view, CSSNode())
 
+    let controlType = "Control"
+
+    let isControlType = (=) controlType
+    
     let createView identity props = 
         let css = CSSNode()
         let view = new UICSSLayoutView(css)
@@ -188,7 +189,7 @@ module iOS =
             nested.view.RemoveFromSuperview()
             nested.css.RemoveSelf()
 
-        createAncestorResource viewAccessor controlDisposer (mounter, unmounter) identity view props
+        createAncestorResource viewAccessor controlDisposer (isControlType, mounter, unmounter) identity view props
         
     let createButton identity props = 
         let button = UIButton.FromType(UIButtonType.System)
@@ -268,7 +269,7 @@ module iOS =
             this.rootView.setView(nested.view)
         let unmounter (this: Popover) (nested: Control) =
             this.rootView.clearView()
-        mounter, unmounter
+        isControlType, mounter, unmounter
 
     let createPopover identity props =
     
@@ -283,10 +284,10 @@ module iOS =
             props
 
     let registerResources() =
-        Registry.register "Button" createButton
-        Registry.register "Text" createLabel
-        Registry.register "View" createView
-        Registry.register "Popover" createPopover
+        Registry.register "Button" controlType createButton
+        Registry.register "Text" controlType createLabel
+        Registry.register "View" controlType createView
+        Registry.register "Popover" "Controller" createPopover
 
     let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
         comp.dispatchEvent event
@@ -307,7 +308,7 @@ module iOS =
         let unmountView (view : UIRootView) (control:Control) = 
             view.clearView()
 
-        let nestingAdapter = mountView, unmountView
+        let nestingAdapter = isControlType, mountView, unmountView
         let disposer _ = ()
 
         let viewResource = 
@@ -315,13 +316,11 @@ module iOS =
                 PropertyAccessor.accessor
                 disposer 
                 nestingAdapter
-                "rootView"
+                ("rootView", "/")
                 view
                 []
 
-        let viewState = { name="UIRootView"; resource = viewResource }
-
-        let mounted = UI.mountRoot viewState element
+        let mounted = UI.mountRoot viewResource element
         registerEventRoot mounted |> ignore
         view :> UIView
 

@@ -27,14 +27,14 @@ module Dict =
 
 module Reconciler =
 
-    type ReconcileFunctions<'k, 'v, 'g> = 
+    type Functions<'k, 'v, 'g> = 
         { 
             add: int -> 'k -> 'v -> 'g; 
             update: int -> 'k -> 'g -> 'v -> 'g; 
             remove : 'k -> 'g -> unit 
         }
 
-    let reconcile (functions: ReconcileFunctions<'k, 'v, 'g>) (cur: Dict<'k, 'g>) (next: ('k * 'v) list) : Dict<'k, 'g> = 
+    let reconcile (functions: Functions<'k, 'v, 'g>) (cur: Dict<'k, 'g>) (next: ('k * 'v) list) : Dict<'k, 'g> = 
         let indexTable = Dict<'k, int>(cur.Count)
         next 
         |> List.iteri (fun i (k, _) -> indexTable.Add(k, i))

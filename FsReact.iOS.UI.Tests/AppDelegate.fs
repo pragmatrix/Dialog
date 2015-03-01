@@ -25,7 +25,14 @@ type AppDelegate () =
         // can't make static initialization of F# modules work.       
         registerResources()
 
-        let createView() = renderAsView (element popoverTest [])
+
+        let currentTest = counter
+        let currentTest = popoverTest
+        let currentTest = replaceRoot
+        let currentTest = replaceNested
+        let currentTest = twoComponents
+
+        let createView() = renderAsView (element currentTest [])
         
         _window <- new UIWindow (UIScreen.MainScreen.Bounds)
 
