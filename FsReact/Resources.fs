@@ -129,12 +129,12 @@ module Resources =
                     |> List.mapi (fun i m -> mkNestedResourceKey i m, m)
                 (this :> Resource<_>).reconcileNested keyedMounts
 
-    let createResource writer disposer identity instance initialProps = 
+    let createResource writer disposer instance identity initialProps = 
         let r = new Resource<_>(identity, instance, writer, NestingAdapter<_>.invalid(), disposer)
         (r :> Resource).update initialProps
         r
 
-    let createAncestorResource writer disposer (typeTester, mounter, unmounter) identity instance initialProps = 
+    let createAncestorResource writer disposer (typeTester, mounter, unmounter) instance identity initialProps = 
         let r = new Resource<_>(identity, instance, writer, NestingAdapter<_, _>(typeTester, mounter, unmounter), disposer)
         (r :> Resource).update initialProps
         r
@@ -153,13 +153,11 @@ module Resources =
             registry <- registry.Add(name, (type', f))
 
 
-    let updateRoot (resource: Resource) root = 
+    let updateElementRoot root = 
         match root.state with
         | ComponentState c ->
             let element = { Element.kind = Component c._class; props = root.props |> Props.toList; nested = [] }
-            let root = reconcile root element
-            resource.updateNested root
-            root
+            reconcile root element
 
         | _ -> failwith "a mounted element at root must be a component"
 
@@ -167,17 +165,41 @@ module Resources =
 
     type MountedRoot_ = 
         { 
-            resource: Resource;
+            resources: Resource list;
             mutable root: MountedElement 
         }
         with
         interface MountedRoot with
             member this.update() = 
-                this.root <- updateRoot this.resource this.root
-                this.resource.updateNested this.root
+                this.root <- updateElementRoot this.root
+                this.resources 
+                |> List.iter (fun r -> r.updateNested this.root)
 
-    let mountRoot (resource: Resource) element = 
+    let mountRoot (resources: Resource list) element = 
         let mounted = mount rootKey element
-        resource.updateNested mounted
-        { resource = resource; root = mounted } :> MountedRoot
+        resources
+        |> List.iter (fun r -> r.updateNested mounted)
+        { resources = resources; root = mounted } :> MountedRoot
 
+    type SystemResource() =
+        class end
+
+    let createSystemResource (nestedRootTypes : string list) = 
+
+        let disposer _ = ()
+
+        let mounter system index nested = ()
+        let unmounter system nested = ()
+
+        let supportsType t =
+            nestedRootTypes
+            |> List.exists ((=) t)
+
+        let nestingAdapter = supportsType, mounter, unmounter
+  
+        createAncestorResource
+            PropertyAccessor.accessor
+            disposer
+            nestingAdapter
+            (SystemResource())
+  

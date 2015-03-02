@@ -175,7 +175,7 @@ module iOS =
 
     let isControlType = (=) controlType
     
-    let createView identity props = 
+    let createView = 
         let css = CSSNode()
         let view = new UICSSLayoutView(css)
         let view = View(view, css)
@@ -189,17 +189,17 @@ module iOS =
             nested.view.RemoveFromSuperview()
             nested.css.RemoveSelf()
 
-        createAncestorResource viewAccessor controlDisposer (isControlType, mounter, unmounter) identity view props
+        createAncestorResource viewAccessor controlDisposer (isControlType, mounter, unmounter) view
         
-    let createButton identity props = 
+    let createButton = 
         let button = UIButton.FromType(UIButtonType.System)
         let control = createControl button
-        createResource buttonAccessor controlDisposer identity control props
+        createResource buttonAccessor controlDisposer control
 
-    let createLabel identity props =
+    let createLabel =
         let label = new UILabel()
         let control = createControl label
-        createResource labelAccessor controlDisposer identity control props
+        createResource labelAccessor controlDisposer control
 
     type UIRootView() = 
         inherit UIView()
@@ -271,7 +271,7 @@ module iOS =
             this.rootView.clearView()
         isControlType, mounter, unmounter
 
-    let createPopover identity props =
+    let createPopover =
     
         let popover = new Popover()
 
@@ -279,9 +279,7 @@ module iOS =
             popoverWriter
             (fun _ -> ())
             popoverAdapter
-            identity
             popover
-            props
 
     let registerResources() =
         Registry.register "Button" controlType createButton
@@ -316,11 +314,14 @@ module iOS =
                 PropertyAccessor.accessor
                 disposer 
                 nestingAdapter
-                ("rootView", "/")
                 view
+                ("rootView", "/")
                 []
 
-        let mounted = UI.mountRoot viewResource element
+        let systemResource = 
+            Resources.createSystemResource ["Controller"] ("system", "/") []
+
+        let mounted = UI.mountRoot [viewResource; systemResource] element
         registerEventRoot mounted |> ignore
         view :> UIView
 
