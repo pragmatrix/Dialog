@@ -97,7 +97,7 @@ module Resources =
         member this.reconcileNested keyedMounts =
             let functions : Reconciler.Functions<_,_,_> = 
                 {
-                    add = fun i k v -> this.mountNested i v;
+                    insert = fun i k v -> this.mountNested i v;
                     update = fun i k resource v -> this.updateNested i resource v
                     remove = fun k resource -> this.unmountNested resource
                 }

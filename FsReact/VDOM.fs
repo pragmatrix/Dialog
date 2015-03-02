@@ -100,7 +100,7 @@ module VDOM =
             |> List.mapi (fun i element -> elementKey key i element, element)
 
         let functions = {
-            add = fun i k e -> mount k e;
+            insert = fun i k e -> mount k e;
             update = fun i k m e -> reconcile m e;
             remove = fun k m -> unmount m
             }

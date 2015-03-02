@@ -29,7 +29,7 @@ module Reconciler =
 
     type Functions<'k, 'v, 'g> = 
         { 
-            add: int -> 'k -> 'v -> 'g; 
+            insert: int -> 'k -> 'v -> 'g; 
             update: int -> 'k -> 'g -> 'v -> 'g; 
             remove : 'k -> 'g -> unit 
         }
@@ -62,7 +62,7 @@ module Reconciler =
                 let g = functions.update i k g v
                 r.Add (k, g)
             | (false, _) ->
-                let g = functions.add i k v 
+                let g = functions.insert i k v 
                 r.Add (k, g)
 
         r

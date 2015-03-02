@@ -81,6 +81,7 @@
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ReconcilerTests.fs" />
     <Compile Include="CoreTests.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
