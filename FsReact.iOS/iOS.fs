@@ -48,11 +48,24 @@ module iOS =
         member this.view = view
 
 
-
     type UICSSLayoutView(css: CSSNode) =
         inherit UIView()
 
         let controls = HashSet<Control>()
+
+        let mutable _preferredSize = (0., 0.)
+
+        member this.calculatePreferredSize() = 
+            css.StyleWidth <- CSSConstants.Undefined
+            css.StyleHeight <- CSSConstants.Undefined
+
+            if (css.IsDirty) then
+                css.CalculateLayout()
+                if css.HasNewLayout then
+                    _preferredSize <- css.LayoutWidth |> float, css.LayoutHeight |> float
+                    css.MarkLayoutSeen()
+            
+            _preferredSize
 
         override this.LayoutSubviews() = 
             if (css.Parent <> null) then ()
@@ -72,12 +85,15 @@ module iOS =
         member this.updateCSS() =
             controls |> Seq.iter (fun ctrl -> ctrl.updateCSS())
             
-        member this.addControl(control: Control) = 
+        member this.mountControl index (control: Control) =
+            css.InsertChild(index, control.css)
+            this.InsertSubview(control.view, nint(index))
             controls.Add control |> ignore
 
-        member this.removeControl(control: Control) = 
+        member this.unmountControl (control: Control) = 
             controls.Remove control |> ignore
-            
+            control.view.RemoveFromSuperview()
+            control.css.RemoveSelf()            
 
     type View(view: UICSSLayoutView, css:CSSNode) = 
         inherit Control<UICSSLayoutView>(view, css)
@@ -200,14 +216,10 @@ module iOS =
             View(view, css)
 
         let mounter (this : View) (index:int) (nested : Control) = 
-            this.css.InsertChild(index, nested.css)
-            this.view.InsertSubview(nested.view, nint(index))
-            this.view.addControl(nested)
+            this.view.mountControl index nested
 
         let unmounter (this : View) (nested : Control) = 
-            this.view.removeControl(nested)
-            nested.view.RemoveFromSuperview()
-            nested.css.RemoveSelf()
+            this.view.unmountControl nested
 
         controlClassPrototype()
             .withConstructor(constructor')
@@ -256,7 +268,8 @@ module iOS =
             ourView.Frame <- frame
 
     type Popover() = 
-        let _rootView = new UIRootView()
+        let _css = new CSSNode()
+        let _rootView = new UICSSLayoutView(_css)
         let _contained = new UIViewController()
         let _controller = new UIPopoverController(_contained)
         do
@@ -271,6 +284,14 @@ module iOS =
                 | Some ref ->
                 let refFrame = ref.get (function Frame f -> f)
                 let refView = ref.get (function IOSView v -> v)
+
+                let (minWidth, minHeight) = _rootView.calculatePreferredSize()
+
+                printfn "preferred size: %A" (minWidth, minHeight)
+
+                // let minWidth = Math.Max(320.0, minWidth)
+
+                _contained.PreferredContentSize <- CGSize(nfloat minWidth, nfloat minHeight)
 
                 let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
             
@@ -307,9 +328,9 @@ module iOS =
             new Popover()
 
         let mounter (this: Popover) index (nested: Control) =
-            this.rootView.setView(nested.view)
+            this.rootView.mountControl index (nested)
         let unmounter (this: Popover) (nested: Control) =
-            this.rootView.clearView()
+            this.rootView.unmountControl (nested)
 
         ResourceClass
             .create()
