@@ -1,13 +1,11 @@
 ﻿namespace FsReact
 
-open System
-
 type Key = Key of string
 
 type MountedRoot = 
     abstract update : unit -> unit
     
-module VDOM = 
+module ComponentDOM = 
 
     open Reconciler
 
@@ -100,9 +98,9 @@ module VDOM =
             |> List.mapi (fun i element -> elementKey key i element, element)
 
         let functions = {
-            insert = fun i k e -> mount k e;
-            update = fun i k m e -> reconcile m e;
-            remove = fun k m -> unmount m
+            insert = fun _ -> mount;
+            update = fun _ _ -> reconcile;
+            remove = fun _ -> unmount;
             }
 
         let newNested = Reconciler.reconcile functions mounted.nested keyedNested

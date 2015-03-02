@@ -4,7 +4,7 @@ module Resources =
 
     open FsReact
     open System
-    open VDOM
+    open ComponentDOM
 
     type MountingNotifications = 
         // notified after all nested elements were mounted
@@ -90,7 +90,7 @@ module Resources =
             match mounted.state with
             | NativeState name ->
                 let resourceKey = mkNestedResourceKey index mounted
-                let identity = VDOM.mkIdentity name resourceKey
+                let identity = ComponentDOM.mkIdentity name resourceKey
                 let resource = instantiateResource identity (mounted.props |> Props.toList)
                 resource.updateNested mounted
                 nestingAdapter.mount _instance index resource.instance

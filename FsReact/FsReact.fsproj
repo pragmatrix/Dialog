@@ -48,7 +48,7 @@
     <Compile Include="PropertyAccessor.fs" />
     <Compile Include="PropertyReconciler.fs" />
     <Compile Include="Core.fs" />
-    <Compile Include="VDOM.fs" />
+    <Compile Include="ComponentDOM.fs" />
     <Compile Include="NestingAdapter.fs" />
     <Compile Include="ScanningStrategies.fs" />
     <Compile Include="Resources.fs" />

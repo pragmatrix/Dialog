@@ -1,7 +1,6 @@
 ﻿namespace FsReact
 
-open Core
-open VDOM
+open ComponentDOM
 
 type Scanner = MountedElement -> MountedElement list
 
