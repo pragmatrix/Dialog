@@ -12,6 +12,8 @@ open System.Collections.Generic
 
 module iOS =
 
+    open ScanningStrategies
+
     let private nf (v:float) = nfloat(v)
 
     type Convert = 
@@ -105,7 +107,7 @@ module iOS =
                 fun () -> e.RemoveHandler handler
 
     let buttonAccessor = 
-        accessor<Control<UIButton>>
+        writerFor<Control<UIButton>>
         |> defaultValue -- Text ""
         |> writer --
             fun this (Text t) ->
@@ -128,7 +130,7 @@ module iOS =
         |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
     let labelAccessor = 
-        accessor<Control<UILabel>>
+        writerFor<Control<UILabel>>
         |> defaultValue -- Text ""
         |> writer --
             fun this (Text t) -> 
@@ -138,7 +140,7 @@ module iOS =
                 this.css.StyleHeight <- this.view.Bounds.Height |> float32
 
     let viewAccessor = 
-        accessor<View>
+        writerFor<View>
         |> defaultValue -- BackgroundColor Color.Transparent
         |> defaultValue -- AlignItems Auto
         |> defaultValue -- JustifyContent Start
@@ -170,13 +172,22 @@ module iOS =
 
     let createControl view = 
         Control<_>(view, CSSNode())
-
-    let controlType = "Control"
-
-    let isControlType = (=) controlType
     
     let controlClassPrototype() = 
         ResourceClass.create().withDestructor(controlDisposer)
+
+    let controlType = "Control"
+    
+    let nestedControlScanner = 
+
+        let isControlType = (=) controlType
+
+        let typeTester t = 
+            match isControlType t with
+            | true -> Include
+            | false -> Skip
+
+        recursiveNativeTypeScanner typeTester
 
     let createView = 
         
@@ -197,7 +208,8 @@ module iOS =
 
         controlClassPrototype()
             .withConstructor(constructor')
-            .withNestingAdapter(isControlType, mounter, unmounter)
+            .withScanner(nestedControlScanner)
+            .withNestingAdapter(mounter, unmounter)
             .withPropertyWriter(viewAccessor)
             .withDestructor(controlDisposer)
             .instantiate
@@ -273,7 +285,7 @@ module iOS =
         readerFor<Popover>
 
     let popoverWriter = 
-        accessor<Popover>
+        writerFor<Popover>
         |> writer -- fun this (Title t) -> this.containedController.Title <- t
         |> mounter --
             // this is probably a common pattern to abstract the lifetime of a property int
@@ -287,7 +299,9 @@ module iOS =
             
     let createPopover =
     
-        let constructor'() = new Popover()
+        let constructor'() = 
+            printf "Popover is constructing"
+            new Popover()
 
         let mounter (this: Popover) index (nested: Control) =
             this.rootView.setView(nested.view)
@@ -296,8 +310,10 @@ module iOS =
 
         ResourceClass
             .create()
+            .withConstructor(constructor')
             .withPropertyWriter(popoverWriter)
-            .withNestingAdapter(isControlType, mounter, unmounter)
+            .withNestingAdapter(mounter, unmounter)
+            .withScanner(nestedControlScanner)
             .instantiate
 
     let registerResources() =
@@ -329,7 +345,8 @@ module iOS =
             ResourceClass
                 .create()
                 .withConstructor(constructor')
-                .withNestingAdapter(isControlType, mountView, unmountView)
+                .withNestingAdapter(mountView, unmountView)
+                .withScanner(nestedControlScanner)
                 .instantiate ("rootView", "/") []
 
         let systemResource = 
@@ -338,32 +355,3 @@ module iOS =
         let mounted = UI.mountRoot [viewResource; systemResource] element
         registerEventRoot mounted |> ignore
         viewResource.instance :> UIView
-
-(*
-    let renderToView element (target : UIView) = 
-
-        let mountView (view: UIView) index (control: Control) = 
-            assert(index = 0)
-            view.Add(control.view)
-            control.view.Frame = 
-            control.view.SetNeedsLayout()
-
-        let unmountView (view: UIView) (control: Control) =
-            control.view.RemoveFromSuperview()
-
-        let nestingAdapter = NestingAdapter(mountView, unmountView)
-        let disposer _ = ()
-
-        let resource = 
-            Resources.createAncestorResource 
-                PropertyWriter.empty 
-                disposer 
-                nestingAdapter
-                target 
-                []
-
-        let state = { name="UIView"; resource = resource }
-
-        let mounted = UI.mountRoot state element
-        registerEventRoot mounted |> ignore
-*)

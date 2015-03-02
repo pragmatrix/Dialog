@@ -123,7 +123,7 @@ module PropertyAccessor =
 
     // writer
 
-    let accessor<'target> : PropertyAccessor<'target> = 
+    let writerFor<'target> : PropertyAccessor<'target> = 
         { mounters = Map.empty; writers = Map.empty; defaultValues = Map.empty }
     
     let mounter (f: 'target -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>) = 

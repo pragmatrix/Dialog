@@ -31,20 +31,25 @@ module Resources =
 
     let typeOf name = registry.[name] |> fst
 
+    let recursiveNativeTypeScanner typeTest = 
+        ScanningStrategies.recursiveNativeNameScanner (typeOf >> typeTest)
+
     (* Resource specification *)
 
     type ResourceClass<'instance> = { 
             constructor': unit -> 'instance; 
             destructor: 'instance -> unit; 
             propertyWriter: PropertyAccessor<'instance>;
-            nestingAdapter: NestingAdapter<'instance>
+            nestingAdapter: NestingAdapter<'instance>;
+            scanner: Scanner;
         }
         with 
         member this.withConstructor c = { this with constructor' = c }
         member this.withDestructor d = { this with destructor = d }
         member this.withWriter w = { this with propertyWriter = w }
         member this.withNestingAdapter na = { this with nestingAdapter = na }
-        member this.withNestingAdapter (tt, mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(tt, mounter, unmounter)}
+        member this.withNestingAdapter (mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(mounter, unmounter)}
+        member this.withScanner scanner = { this with scanner = scanner }
         member this.withPropertyWriter writer = { this with propertyWriter = writer }
 
     type ResourceClass = 
@@ -52,23 +57,11 @@ module Resources =
             { 
                 constructor' = fun () -> failwith "not implemented"; 
                 destructor = fun _ -> (); 
-                propertyWriter = PropertyAccessor.accessor; 
-                nestingAdapter = NestingAdapter<_>.invalid() 
+                propertyWriter = PropertyAccessor.writerFor; 
+                nestingAdapter = NestingAdapter<_>.agnostic();
+                scanner = ScanningStrategies.dontScan
             }
-     
-    let rec queryNestedResourceMounts nameFilter (mounted : MountedElement) = 
-        let nestedNames = mounted.orderedKeys
-        [
-            for name in nestedNames do
-                let nested = mounted.nested.[name]
-                match nested.state with
-                | ComponentState _ ->
-                    yield! queryNestedResourceMounts nameFilter nested
-                | NativeState n ->
-                    if nameFilter n then
-                        yield nested
-        ]
-
+ 
     let mkNestedResourceKey i (mounted : MountedElement) = 
         match Props.tryGet (fun (Key k) -> k) mounted.props with
         | Some k -> k
@@ -152,7 +145,7 @@ module Resources =
 *)
 
             member this.updateNested mounted = 
-                let mounts = queryNestedResourceMounts (typeOf >> nestingAdapter.canMountType)  mounted
+                let mounts = class'.scanner mounted
                 let keyedMounts = 
                     mounts 
                     |> List.mapi (fun i m -> mkNestedResourceKey i m, m)
@@ -216,16 +209,19 @@ module Resources =
             .create()
             .withConstructor(fun () -> SystemResource())
 
+    open ScanningStrategies
+
     let createSystemResource (nestedRootTypes : string list) = 
 
-        let supportsType t =
-            nestedRootTypes
-            |> List.exists ((=) t)
+        let inclusionTest t =
+            let include' = 
+                nestedRootTypes
+                |> List.exists ((=) t)
+            if include' then Include else ScanNested
 
-        let mounter _ _ _ = ()
-        let unmounter _ _ = ()
+        let scanner = recursiveNativeTypeScanner inclusionTest
 
         systemResourceClassPrototype
-            .withNestingAdapter(supportsType, mounter, unmounter)
+            .withScanner(scanner)
             .instantiate
   
