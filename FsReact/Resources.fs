@@ -30,6 +30,31 @@ module Resources =
         f identity props
 
     let typeOf name = registry.[name] |> fst
+
+    (* Resource specification *)
+
+    type ResourceClass<'instance> = { 
+            constructor': unit -> 'instance; 
+            destructor: 'instance -> unit; 
+            propertyWriter: PropertyAccessor<'instance>;
+            nestingAdapter: NestingAdapter<'instance>
+        }
+        with 
+        member this.withConstructor c = { this with constructor' = c }
+        member this.withDestructor d = { this with destructor = d }
+        member this.withWriter w = { this with propertyWriter = w }
+        member this.withNestingAdapter na = { this with nestingAdapter = na }
+        member this.withNestingAdapter (tt, mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(tt, mounter, unmounter)}
+        member this.withPropertyWriter writer = { this with propertyWriter = writer }
+
+    type ResourceClass = 
+        static member create() = 
+            { 
+                constructor' = fun () -> failwith "not implemented"; 
+                destructor = fun _ -> (); 
+                propertyWriter = PropertyAccessor.accessor; 
+                nestingAdapter = NestingAdapter<_>.invalid() 
+            }
      
     let rec queryNestedResourceMounts nameFilter (mounted : MountedElement) = 
         let nestedNames = mounted.orderedKeys
@@ -51,18 +76,22 @@ module Resources =
 
     type Resource<'resource>
         (
-            identity: Identity,
-            instance: 'resource,
-            writer: PropertyAccessor<'resource>, 
-            nestingAdapter: NestingAdapter<'resource>,
-            disposer: 'resource -> unit
+            class': ResourceClass<'resource>,
+            identity: Identity
         ) =
+
+        let _instance = class'.constructor'()
+        let writer = class'.propertyWriter
+        let nestingAdapter = class'.nestingAdapter
+        let disposer = class'.destructor
 
         let mutable _nested: Dict<string, Resource> = Dict<_, _>()
         
         let identityString = snd identity + ":" + fst identity
 
-        let propertyReconciler = PropertyReconciler<'resource>(writer, instance, identityString)
+        let propertyReconciler = PropertyReconciler<'resource>(writer, _instance, identityString)
+
+        member this.instance = _instance
 
         member this.mountNested index mounted = 
             match mounted.state with
@@ -71,14 +100,14 @@ module Resources =
                 let identity = VDOM.mkIdentity name resourceKey
                 let resource = instantiateResource identity (mounted.props |> Props.toList)
                 resource.updateNested mounted
-                nestingAdapter.mount instance index resource.instance
+                nestingAdapter.mount _instance index resource.instance
                 resource
 
             | _ -> failwith "internal error: can't create resources for non-native elements"
 
         member this.unmountNested (resource:Resource) = 
             resource.unmount()
-            nestingAdapter.unmount instance resource.instance
+            nestingAdapter.unmount _instance resource.instance
             resource.Dispose()
 
         member this.updateNested index (resource : Resource) mounted = 
@@ -106,9 +135,9 @@ module Resources =
    
         interface Resource with
             member __.identity = identity
-            member __.instance = instance :> obj
+            member __.instance = _instance :> obj
             member __.update props = propertyReconciler.update props
-            member __.Dispose() = disposer instance
+            member __.Dispose() = disposer _instance
             member this.unmount() = this.reconcileNested []
                 
 (*
@@ -129,15 +158,12 @@ module Resources =
                     |> List.mapi (fun i m -> mkNestedResourceKey i m, m)
                 (this :> Resource<_>).reconcileNested keyedMounts
 
-    let createResource writer disposer instance identity initialProps = 
-        let r = new Resource<_>(identity, instance, writer, NestingAdapter<_>.invalid(), disposer)
-        (r :> Resource).update initialProps
-        r
-
-    let createAncestorResource writer disposer (typeTester, mounter, unmounter) instance identity initialProps = 
-        let r = new Resource<_>(identity, instance, writer, NestingAdapter<_, _>(typeTester, mounter, unmounter), disposer)
-        (r :> Resource).update initialProps
-        r
+    type ResourceClass<'instance> with
+        member this.instantiate identity initialProps = 
+            let r = 
+                new Resource<_>(this, identity)
+            (r:>Resource).update initialProps
+            r
 
     (* Resource references *)
 
@@ -184,22 +210,22 @@ module Resources =
     type SystemResource() =
         class end
 
+
+    let private systemResourceClassPrototype = 
+        ResourceClass
+            .create()
+            .withConstructor(fun () -> SystemResource())
+
     let createSystemResource (nestedRootTypes : string list) = 
-
-        let disposer _ = ()
-
-        let mounter system index nested = ()
-        let unmounter system nested = ()
 
         let supportsType t =
             nestedRootTypes
             |> List.exists ((=) t)
 
-        let nestingAdapter = supportsType, mounter, unmounter
-  
-        createAncestorResource
-            PropertyAccessor.accessor
-            disposer
-            nestingAdapter
-            (SystemResource())
+        let mounter _ _ _ = ()
+        let unmounter _ _ = ()
+
+        systemResourceClassPrototype
+            .withNestingAdapter(supportsType, mounter, unmounter)
+            .instantiate
   

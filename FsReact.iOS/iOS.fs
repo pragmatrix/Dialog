@@ -175,10 +175,16 @@ module iOS =
 
     let isControlType = (=) controlType
     
+    let controlClassPrototype() = 
+        ResourceClass.create().withDestructor(controlDisposer)
+
     let createView = 
-        let css = CSSNode()
-        let view = new UICSSLayoutView(css)
-        let view = View(view, css)
+        
+        let constructor'() = 
+            let css = CSSNode()
+            let view = new UICSSLayoutView(css)
+            View(view, css)
+
         let mounter (this : View) (index:int) (nested : Control) = 
             this.css.InsertChild(index, nested.css)
             this.view.InsertSubview(nested.view, nint(index))
@@ -189,17 +195,32 @@ module iOS =
             nested.view.RemoveFromSuperview()
             nested.css.RemoveSelf()
 
-        createAncestorResource viewAccessor controlDisposer (isControlType, mounter, unmounter) view
+        controlClassPrototype()
+            .withConstructor(constructor')
+            .withNestingAdapter(isControlType, mounter, unmounter)
+            .withPropertyWriter(viewAccessor)
+            .withDestructor(controlDisposer)
+            .instantiate
         
     let createButton = 
-        let button = UIButton.FromType(UIButtonType.System)
-        let control = createControl button
-        createResource buttonAccessor controlDisposer control
+        let constructor'() = 
+            let button = UIButton.FromType(UIButtonType.System)
+            createControl button
+
+        controlClassPrototype()
+            .withConstructor(constructor')
+            .withPropertyWriter(buttonAccessor)
+            .instantiate
 
     let createLabel =
-        let label = new UILabel()
-        let control = createControl label
-        createResource labelAccessor controlDisposer control
+        let constructor'() = 
+            let label = new UILabel()
+            createControl label
+        
+        controlClassPrototype()
+            .withConstructor(constructor')
+            .withPropertyWriter(labelAccessor)
+            .instantiate
 
     type UIRootView() = 
         inherit UIView()
@@ -264,22 +285,20 @@ module iOS =
                 this.anchor <- None
         |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
             
-    let popoverAdapter = 
+    let createPopover =
+    
+        let constructor'() = new Popover()
+
         let mounter (this: Popover) index (nested: Control) =
             this.rootView.setView(nested.view)
         let unmounter (this: Popover) (nested: Control) =
             this.rootView.clearView()
-        isControlType, mounter, unmounter
 
-    let createPopover =
-    
-        let popover = new Popover()
-
-        Resources.createAncestorResource
-            popoverWriter
-            (fun _ -> ())
-            popoverAdapter
-            popover
+        ResourceClass
+            .create()
+            .withPropertyWriter(popoverWriter)
+            .withNestingAdapter(isControlType, mounter, unmounter)
+            .instantiate
 
     let registerResources() =
         Registry.register "Button" controlType createButton
@@ -298,7 +317,7 @@ module iOS =
 
 
     let renderAsView element = 
-        let view = new UIRootView()
+        let constructor'() = new UIRootView()
 
         let mountView (view : UIRootView) index (control:Control) = 
             view.setView(control.view)
@@ -306,24 +325,19 @@ module iOS =
         let unmountView (view : UIRootView) (control:Control) = 
             view.clearView()
 
-        let nestingAdapter = isControlType, mountView, unmountView
-        let disposer _ = ()
-
         let viewResource = 
-            Resources.createAncestorResource 
-                PropertyAccessor.accessor
-                disposer 
-                nestingAdapter
-                view
-                ("rootView", "/")
-                []
+            ResourceClass
+                .create()
+                .withConstructor(constructor')
+                .withNestingAdapter(isControlType, mountView, unmountView)
+                .instantiate ("rootView", "/") []
 
         let systemResource = 
             Resources.createSystemResource ["Controller"] ("system", "/") []
 
         let mounted = UI.mountRoot [viewResource; systemResource] element
         registerEventRoot mounted |> ignore
-        view :> UIView
+        viewResource.instance :> UIView
 
 (*
     let renderToView element (target : UIView) = 

@@ -13,7 +13,6 @@ type NestingAdapter<'target>(typeTest: string -> bool, mounter: 'target -> int -
     abstract canMount : obj -> bool
     default this.canMount o = false
 
-
     static member invalid<'target>() = 
         let invalidMounter target _ _ = 
             failwithf "target %s does not support nested elements" (target.ToString())
