@@ -40,7 +40,7 @@ type MountedProperty =
     abstract update: obj -> MountedProperty
     abstract unmount: unit -> unit
 
-type PropertyAccessor<'target> = 
+type PropertyWriter<'target> = 
     { 
         mounters: Map<string, 'target -> obj -> (unit -> unit)>;
         writers: Map<string, 'target -> obj -> unit>;
@@ -123,19 +123,19 @@ module PropertyAccessor =
 
     // writer
 
-    let writerFor<'target> : PropertyAccessor<'target> = 
+    let writerFor<'target> : PropertyWriter<'target> = 
         { mounters = Map.empty; writers = Map.empty; defaultValues = Map.empty }
     
-    let mounter (f: 'target -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>) = 
+    let mounter (f: 'target -> 'property -> (unit -> unit)) (this: PropertyWriter<'target>) = 
         let name = typedefof<'property>.Name
         let mounter target property = f target (unbox property)
         { this with mounters = this.mounters.Add(name, mounter) }
     
-    let writer (f: 'target -> 'property -> unit) (this: PropertyAccessor<'target>) = 
+    let writer (f: 'target -> 'property -> unit) (this: PropertyWriter<'target>) = 
         let name = typedefof<'property>.Name
         let writer target property = f target (unbox property)
         { this with writers = this.writers.Add(name, writer) }
 
-    let defaultValue (v:'property) (this : PropertyAccessor<'target>) = 
+    let defaultValue (v:'property) (this : PropertyWriter<'target>) = 
         let name = v.GetType().Name
         { this with defaultValues = this.defaultValues.Add(name, box v) }

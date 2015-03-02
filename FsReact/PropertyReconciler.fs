@@ -14,7 +14,7 @@ open Reconciler
         - combine _values and _properties dictionary
 *)
 
-type PropertyReconciler<'target>(writer : PropertyAccessor<'target>, target : 'target, identity: string) = 
+type PropertyReconciler<'target>(writer : PropertyWriter<'target>, target : 'target, identity: string) = 
 
     let mutable _properties = Dict<string, MountedProperty>()
     

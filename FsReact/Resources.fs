@@ -39,7 +39,7 @@ module Resources =
     type ResourceClass<'instance> = { 
             constructor': unit -> 'instance; 
             destructor: 'instance -> unit; 
-            propertyWriter: PropertyAccessor<'instance>;
+            propertyWriter: PropertyWriter<'instance>;
             nestingAdapter: NestingAdapter<'instance>;
             scanner: Scanner;
         }
