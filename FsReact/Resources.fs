@@ -17,9 +17,11 @@ module Resources =
         abstract identity: Identity
         abstract update : Properties -> unit
         abstract instance : obj
-        // shouldn't this be dispose?
-        abstract unmount : unit -> unit
         abstract updateNested : MountedElement -> unit
+
+        abstract mounted : unit -> unit
+        abstract unmounting : unit -> unit
+
 
     (* Registration of resource constructors *)
 
@@ -94,12 +96,13 @@ module Resources =
                 let resource = instantiateResource identity (mounted.props |> Props.toList)
                 resource.updateNested mounted
                 _nestingAdapter.mount _instance index resource.instance
+                resource.mounted()
                 resource
 
             | _ -> failwith "internal error: can't create resources for non-native elements"
 
         member this.unmountNested (resource:Resource) = 
-            resource.unmount()
+            resource.unmounting()
             _nestingAdapter.unmount _instance resource.instance
             resource.Dispose()
 
@@ -131,19 +134,18 @@ module Resources =
             member __.instance = _instance :> obj
             member __.update props = _propertyReconciler.update props
             member __.Dispose() = _disposer _instance
-            member this.unmount() = this.reconcileNested []
-                
-(*
-            member __.notifyMounted() = 
-                match box instance with
+
+            member this.mounted() = 
+                match box _instance with
                 | :? MountingNotifications as mn -> mn.mounted()
                 | _ -> ()
-            member __.notifyUnmounting() = 
-                match box instance with
+
+            member this.unmounting() = 
+                match box _instance with
                 | :? MountingNotifications as mn -> mn.unmounting()
                 | _ -> ()
-*)
-
+                this.reconcileNested []
+           
             member this.updateNested mounted = 
                 let mounts = class'.scanner mounted
                 let keyedMounts = 

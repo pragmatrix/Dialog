@@ -3,11 +3,14 @@
 open FsReact
 open FsReact.Core
 open FsReact.UI
-open UIKit
-open Resources
-open System
+open FsReact.Resources
+
 open CoreGraphics
+open UIKit
+
 open Facebook.CSSLayout
+
+open System
 open System.Collections.Generic
 
 module iOS =
@@ -328,9 +331,6 @@ module iOS =
         
     let private registerEventRoot mountedRoot = 
         registerEventRoot (dispatchEventAndUpdate mountedRoot)
-
-    let debug = System.Diagnostics.Debug.WriteLine
-
 
     let renderAsView element = 
         let constructor'() = new UIRootView()
