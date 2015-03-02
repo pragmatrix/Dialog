@@ -7,6 +7,18 @@ type Properties = obj list
 type Reference = 
     abstract get : ('property -> 'value) -> 'value
 
+[<AutoOpen>]
+module ReferenceExtensions = 
+    type Reference with
+        static member withProperties properties = 
+            {
+                new Reference with
+                    member this.get decon = 
+                        Props.getFromList decon properties
+            }
+
+        static member empty = Reference.withProperties []
+
 type Event<'event> = { message: 'event; props: Properties; sender: Reference }
     with 
     member this.unboxed() = { message = this.message |> unbox; props = this.props; sender = this.sender }

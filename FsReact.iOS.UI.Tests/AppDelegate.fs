@@ -27,10 +27,10 @@ type AppDelegate () =
 
 
         let currentTest = counter
-        let currentTest = popoverTest
         let currentTest = replaceRoot
         let currentTest = replaceNested
         let currentTest = twoComponents
+        let currentTest = popoverTest
 
         let createView() = renderAsView (element currentTest [])
         

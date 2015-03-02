@@ -18,8 +18,8 @@ type CoreTests() =
     [<Test>]
     member this.``function instances can be used as roots``() = 
 
-        let f = fun e -> ()
-        let f2 = fun e -> ()
+        let f = fun c e -> ()
+        let f2 = fun c e -> ()
         let registered = registerEventRoot f
         let registered2 = registerEventRoot f2
         
@@ -32,11 +32,18 @@ type CoreTests() =
         
         let c = DummyComponent()
 
-        let f = fun e ->
+        let f = fun c e ->
             delivered := true
 
         let registered = registerEventRoot f
-        dispatchEvent (c :> Component, null)
+
+        let ev = {
+            message = null
+            props = []
+            sender = Reference.empty
+        }
+
+        dispatchEvent (c :> Component) ev
         registered()
         Assert.True(!delivered)
     
