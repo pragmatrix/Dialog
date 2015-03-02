@@ -74,15 +74,15 @@ module Resources =
         ) =
 
         let _instance = class'.constructor'()
-        let writer = class'.propertyWriter
-        let nestingAdapter = class'.nestingAdapter
-        let disposer = class'.destructor
+        let _writer = class'.propertyWriter
+        let _nestingAdapter = class'.nestingAdapter
+        let _disposer = class'.destructor
 
-        let mutable _nested: Dict<string, Resource> = Dict<_, _>()
+        let mutable _nested = Dict<string, Resource>()
         
-        let identityString = snd identity + ":" + fst identity
+        let _identityString = snd identity + ":" + fst identity
 
-        let propertyReconciler = PropertyReconciler<'resource>(writer, _instance, identityString)
+        let _propertyReconciler = PropertyReconciler<'resource>(_writer, _instance, _identityString)
 
         member this.instance = _instance
 
@@ -93,14 +93,14 @@ module Resources =
                 let identity = ComponentDOM.mkIdentity name resourceKey
                 let resource = instantiateResource identity (mounted.props |> Props.toList)
                 resource.updateNested mounted
-                nestingAdapter.mount _instance index resource.instance
+                _nestingAdapter.mount _instance index resource.instance
                 resource
 
             | _ -> failwith "internal error: can't create resources for non-native elements"
 
         member this.unmountNested (resource:Resource) = 
             resource.unmount()
-            nestingAdapter.unmount _instance resource.instance
+            _nestingAdapter.unmount _instance resource.instance
             resource.Dispose()
 
         member this.updateNested index (resource : Resource) mounted = 
@@ -129,8 +129,8 @@ module Resources =
         interface Resource with
             member __.identity = identity
             member __.instance = _instance :> obj
-            member __.update props = propertyReconciler.update props
-            member __.Dispose() = disposer _instance
+            member __.update props = _propertyReconciler.update props
+            member __.Dispose() = _disposer _instance
             member this.unmount() = this.reconcileNested []
                 
 (*
