@@ -45,6 +45,12 @@ module iOS =
             UIView.PerformWithoutAnimation(fun () -> view.Frame <- frame);
             css.MarkLayoutSeen()
 
+        member this.useSizeThatFits() =
+            this.css.MeasureFunction <-
+                fun node width ->
+                    let sz = this.view.SizeThatFits(new CGSize(nfloat width, nfloat 0.0))
+                    MeasureOutput(sz.Width |> float32, sz.Height |> float32)
+
     type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
         inherit Control(view, css)
         member this.view = view
@@ -132,33 +138,15 @@ module iOS =
         |> defaultValue -- Text ""
         |> writer --
             fun this (Text t) ->
-                UIView.PerformWithoutAnimation(
-                    fun _ ->
-                        this.view.SetTitle(t, UIControlState.Normal)
-                        this.view.LayoutIfNeeded())
+                UIView.PerformWithoutAnimation
+                    (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
 
-                this.view.SizeToFit()
-
-                this.css.StyleWidth <- this.view.Bounds.Width |> float32
-                this.css.StyleHeight <- this.view.Bounds.Height |> float32
-(*
-        |> mounter --
-            fun this (OnClick (comp, msg)) ->
-                let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg buttonReader
-                this.view.TouchUpInside.AddHandler handler
-                fun () -> this.view.TouchUpInside.RemoveHandler handler
-*)
         |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
     let labelAccessor = 
         writerFor<Control<UILabel>>
         |> defaultValue -- Text ""
-        |> writer --
-            fun this (Text t) -> 
-                this.view.Text <- t
-                this.view.SizeToFit()
-                this.css.StyleWidth <- this.view.Bounds.Width |> float32
-                this.css.StyleHeight <- this.view.Bounds.Height |> float32
+        |> writer -- fun this (Text t) -> this.view.Text <- t
 
     let private convertAlign align = 
         match align with
@@ -276,7 +264,9 @@ module iOS =
     let createButton = 
         let constructor'() = 
             let button = UIButton.FromType(UIButtonType.System)
-            createControl button
+            let control = createControl button
+            control.useSizeThatFits()
+            control
 
         controlClassPrototype()
             .withConstructor(constructor')
@@ -286,8 +276,10 @@ module iOS =
     let createLabel =
         let constructor'() = 
             let label = new UILabel()
-            createControl label
-        
+            let control = createControl label
+            control.useSizeThatFits()
+            control
+
         controlClassPrototype()
             .withConstructor(constructor')
             .withPropertyWriter(labelAccessor)
