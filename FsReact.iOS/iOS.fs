@@ -139,6 +139,11 @@ module iOS =
 
     let controlWriter = 
         writerFor<Control>
+        |> defaultValue -- BackgroundColor Color.Transparent
+        |> writer --
+            fun this (BackgroundColor color) ->
+                this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
+
         |> writer --
             fun this (AlignSelf align) ->
                 this.css.AlignSelf <- convertAlign align
@@ -202,12 +207,8 @@ module iOS =
 
         let viewAccessor = 
             writerFor<View>.extend controlWriter
-            |> defaultValue -- BackgroundColor Color.Transparent
             |> defaultValue -- AlignItems Auto
             |> defaultValue -- JustifyContent.Start
-            |> writer --
-                fun this (BackgroundColor color) ->
-                    this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
             |> writer --
                 fun this (direction : LayoutDirection) ->
                     this.css.FlexDirection <-

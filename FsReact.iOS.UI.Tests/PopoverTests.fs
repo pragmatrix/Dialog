@@ -34,7 +34,7 @@ let popoverTest =
                                     yield text "Popover Content" []
                                 yield button "Test Autosize" (this, AddText) []
                             ] []
-                        ] []
+                        ] [Margin (Spacing.All 10.)]
                     ] [Anchor anchor]
                 | None -> ()
                 yield button "Show Popover" (this, ButtonClicked) []
