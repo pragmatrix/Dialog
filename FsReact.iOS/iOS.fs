@@ -114,10 +114,49 @@ module iOS =
     let mkHandler handler = EventHandler handler
     let mkEvent target msg reader = { message = msg; props = []; sender = ResourceReference(target, reader) }
 
+    let private convertAlign align = 
+        match align with
+        | Align.Auto -> CSSAlign.Auto
+        | Align.Start -> CSSAlign.FlexStart
+        | Align.Center -> CSSAlign.Center
+        | Align.End -> CSSAlign.FlexEnd
+        | Align.Stretch -> CSSAlign.Stretch
+
+    let private setSpacing spacing setter = 
+        setter(SpacingType.Left, spacing.left |> float32)
+        setter(SpacingType.Top, spacing.top |> float32)
+        setter(SpacingType.Right, spacing.right |> float32)
+        setter(SpacingType.Bottom, spacing.bottom |> float32)
+
     let controlReader = 
         readerFor<Control>
         |> reader --
             fun this -> IOSView this.view
+
+    let controlWriter = 
+        writerFor<Control>
+        |> writer --
+            fun this (AlignSelf align) ->
+                this.css.AlignSelf <- convertAlign align
+        |> writer --
+            fun this (Flex f) ->
+                this.css.Flex <- f |> float32
+        |> writer --
+            fun this (Margin spacing) ->
+                setSpacing spacing this.css.SetMargin
+        |> writer --
+            fun this (Border spacing) ->
+                setSpacing spacing this.css.SetBorder
+        |> writer --
+            fun this (Padding spacing) ->
+                setSpacing spacing this.css.SetPadding
+        |> writer --
+            fun this (Width width) ->
+                this.css.StyleWidth <- width |> float32
+        |> writer --
+            fun this (Height height) ->
+                this.css.StyleHeight <- height |> float32
+
 
     let buttonReader = 
         readerFor<Control<UIButton>>.extend controlReader
@@ -134,7 +173,7 @@ module iOS =
                 fun () -> e.RemoveHandler handler
 
     let buttonAccessor = 
-        writerFor<Control<UIButton>>
+        writerFor<Control<UIButton>>.extend controlWriter
         |> defaultValue -- Text ""
         |> writer --
             fun this (Text t) ->
@@ -144,26 +183,12 @@ module iOS =
         |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
     let labelAccessor = 
-        writerFor<Control<UILabel>>
+        writerFor<Control<UILabel>>.extend controlWriter
         |> defaultValue -- Text ""
         |> writer -- fun this (Text t) -> this.view.Text <- t
 
-    let private convertAlign align = 
-        match align with
-        | Align.Auto -> CSSAlign.Auto
-        | Align.Start -> CSSAlign.FlexStart
-        | Align.Center -> CSSAlign.Center
-        | Align.End -> CSSAlign.FlexEnd
-        | Align.Stretch -> CSSAlign.Stretch
-
-    let private setSpacing spacing setter = 
-        setter(SpacingType.Left, spacing.left |> float32)
-        setter(SpacingType.Top, spacing.top |> float32)
-        setter(SpacingType.Right, spacing.right |> float32)
-        setter(SpacingType.Bottom, spacing.bottom |> float32)
-
     let viewAccessor = 
-        writerFor<View>
+        writerFor<View>.extend controlWriter
         |> defaultValue -- BackgroundColor Color.Transparent
         |> defaultValue -- AlignItems Auto
         |> defaultValue -- JustifyContent.Start
@@ -190,32 +215,11 @@ module iOS =
             fun this (AlignItems align) ->
                 this.css.AlignItems <- convertAlign align
         |> writer --
-            fun this (AlignSelf align) ->
-                this.css.AlignSelf <- convertAlign align
-        |> writer --
             fun this (wrap : Wrap) ->
                 this.css.Wrap <- 
                     match wrap with
                     | Wrap.NoWrap -> CSSWrap.NoWrap
                     | Wrap.Wrap -> CSSWrap.Wrap
-        |> writer --
-            fun this (Flex f) ->
-                this.css.Flex <- f |> float32
-        |> writer --
-            fun this (Margin spacing) ->
-                setSpacing spacing this.css.SetMargin
-        |> writer --
-            fun this (Border spacing) ->
-                setSpacing spacing this.css.SetBorder
-        |> writer --
-            fun this (Padding spacing) ->
-                setSpacing spacing this.css.SetPadding
-        |> writer --
-            fun this (Width width) ->
-                this.css.StyleWidth <- width |> float32
-        |> writer --
-            fun this (Height height) ->
-                this.css.StyleHeight <- height |> float32
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()

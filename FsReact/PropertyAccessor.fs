@@ -4,6 +4,15 @@
 
 *)
 
+
+module Map = 
+    let joinSeq (left: Map<'a, 'b>) (right: ('a*'b) seq) = 
+        right
+        |> Seq.fold (fun (m:Map<_,_>) (k, v) -> m.Add(k, v)) left
+
+    let join (left:Map<'a,'b>) (right:Map<'a,'b>) = 
+        joinSeq left (right |> Map.toSeq)
+
 type PropertyReader<'target> = 
     {
         readers: Map<string, 'target -> obj>
@@ -99,13 +108,25 @@ type PropertyWriter<'target> =
         | None ->
             failwithf "native type '%s' does not support mounting / writing property '%s'" typedefof<'target>.Name name
 
-(*
-    member this.derived() : PropertyWriter<'derived> = 
-        let dMap = 
-            this.map
-            |> Map.map (fun _ f -> (fun (d:'derived) p -> f (d :> obj :?> 'target) p))
-        { map = dMap }
-*)
+    member this.extend (parent: PropertyWriter<'parent>) : PropertyWriter<'target> =
+        let promote f = 
+            fun t -> t |> box |> unbox |> f
+
+        let promotedWriters = 
+            parent.writers 
+            |> Map.toSeq 
+            |> Seq.map (fun (s, f) -> (s, promote f) )
+
+        let promotedMounters = 
+            parent.mounters 
+            |> Map.toSeq 
+            |> Seq.map (fun (s, f) -> (s, promote f) )
+
+        { this with 
+            writers = Map.joinSeq this.writers promotedWriters
+            mounters = Map.joinSeq this.mounters promotedMounters
+            defaultValues = Map.join this.defaultValues parent.defaultValues
+            }
 
 module PropertyAccessor =
 
