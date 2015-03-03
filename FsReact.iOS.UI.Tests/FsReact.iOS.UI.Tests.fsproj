@@ -125,7 +125,7 @@
   <ItemGroup>
     <None Include="Info.plist" />
     <Compile Include="RootViewController.fs" />
-    <Compile Include="ComponentTests.fs" />
+    <Compile Include="LayoutTests.fs" />
     <Compile Include="PopoverTests.fs" />
     <Compile Include="AppDelegate.fs" />
     <Content Include="Download From Cloud-100.png" />

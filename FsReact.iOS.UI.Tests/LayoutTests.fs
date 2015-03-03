@@ -1,4 +1,4 @@
-﻿module ComponentTests
+﻿module LayoutTests
 
 open FsReact
 open FsReact.UI
