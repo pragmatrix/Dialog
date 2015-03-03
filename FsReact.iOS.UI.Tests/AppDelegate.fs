@@ -7,7 +7,7 @@ open FsReact
 open FsReact.iOS
 open FsReact.Core
 
-open ComponentTests
+open LayoutTests
 open PopoverTests
 
 [<Register ("AppDelegate")>]
