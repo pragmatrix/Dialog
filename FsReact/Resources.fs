@@ -45,6 +45,7 @@ module Resources =
             nestingAdapter: NestingAdapter<'instance>;
             scanner: Scanner;
             updateNotifier: 'instance -> unit;
+            mountingNotifier: ('instance -> unit) * ('instance -> unit);
         }
         with 
         member this.withConstructor c = { this with constructor' = c }
@@ -55,9 +56,21 @@ module Resources =
         member this.withScanner scanner = { this with scanner = scanner }
         member this.withPropertyWriter writer = { this with propertyWriter = writer }
         member this.withUpdateNotifier notifier = { this with updateNotifier = notifier }
+        member this.withMountingNotifier notifier = { this with mountingNotifier = notifier }
 
     type ResourceClass = 
         static member create() = 
+
+            let notifyMounted i = 
+                match box i with
+                | :? MountingNotifications as mn -> mn.mounted()
+                | _ -> ()
+
+            let notifyUnmounting i = 
+                match box i with
+                | :? MountingNotifications as mn -> mn.unmounting()
+                | _ -> ()
+
             { 
                 constructor' = fun () -> failwith "not implemented"; 
                 destructor = fun _ -> (); 
@@ -65,6 +78,7 @@ module Resources =
                 nestingAdapter = NestingAdapter<_>.agnostic();
                 scanner = ScanningStrategies.dontScan;
                 updateNotifier = fun _ -> ();
+                mountingNotifier = notifyMounted, notifyUnmounting
             }
  
     let mkNestedResourceKey i (mounted : MountedElement) = 
@@ -143,14 +157,10 @@ module Resources =
             member __.Dispose() = _disposer _instance
 
             member this.mounted() = 
-                match box _instance with
-                | :? MountingNotifications as mn -> mn.mounted()
-                | _ -> ()
-
-            member this.unmounting() = 
-                match box _instance with
-                | :? MountingNotifications as mn -> mn.unmounting()
-                | _ -> ()
+                (fst class'.mountingNotifier) _instance
+            
+            member this.unmounting() =
+                (snd class'.mountingNotifier) _instance
                 this.reconcileNested []
            
             member this.updateNested mounted =
