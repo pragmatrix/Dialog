@@ -160,32 +160,74 @@ module iOS =
                 this.css.StyleWidth <- this.view.Bounds.Width |> float32
                 this.css.StyleHeight <- this.view.Bounds.Height |> float32
 
+    let private convertAlign align = 
+        match align with
+        | Align.Auto -> CSSAlign.Auto
+        | Align.Start -> CSSAlign.FlexStart
+        | Align.Center -> CSSAlign.Center
+        | Align.End -> CSSAlign.FlexEnd
+        | Align.Stretch -> CSSAlign.Stretch
+
+    let private setSpacing spacing setter = 
+        setter(SpacingType.Left, spacing.left |> float32)
+        setter(SpacingType.Top, spacing.top |> float32)
+        setter(SpacingType.Right, spacing.right |> float32)
+        setter(SpacingType.Bottom, spacing.bottom |> float32)
+
     let viewAccessor = 
         writerFor<View>
         |> defaultValue -- BackgroundColor Color.Transparent
         |> defaultValue -- AlignItems Auto
-        |> defaultValue -- JustifyContent Start
+        |> defaultValue -- JustifyContent.Start
         |> writer --
             fun this (BackgroundColor color) ->
                 this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
         |> writer --
-            fun this (AlignItems align) ->
-                this.css.AlignItems <- 
-                    match align with
-                    | Align.Auto -> CSSAlign.Auto
-                    | Align.Start -> CSSAlign.FlexStart
-                    | Align.Center -> CSSAlign.Center
-                    | Align.End -> CSSAlign.FlexEnd
-                    | Align.Stretch -> CSSAlign.Stretch
+            fun this (direction : LayoutDirection) ->
+                this.css.FlexDirection <-
+                    match direction with
+                    | LayoutDirection.Column -> CSSFlexDirection.Column
+                    | LayoutDirection.Row -> CSSFlexDirection.Row
+
         |> writer --
-            fun this (JustifyContent justify) ->
+            fun this (justify : JustifyContent) ->
                 this.css.JustifyContent <-
                     match justify with
-                    | Justify.Start -> CSSJustify.FlexStart
-                    | Justify.Center -> CSSJustify.Center
-                    | Justify.End -> CSSJustify.FlexEnd
-                    | Justify.SpaceBetween -> CSSJustify.SpaceBetween
-                    | Justify.SpaceAround -> CSSJustify.SpaceAround
+                    | JustifyContent.Start -> CSSJustify.FlexStart
+                    | JustifyContent.Center -> CSSJustify.Center
+                    | JustifyContent.End -> CSSJustify.FlexEnd
+                    | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
+                    | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
+        |> writer --
+            fun this (AlignItems align) ->
+                this.css.AlignItems <- convertAlign align
+        |> writer --
+            fun this (AlignSelf align) ->
+                this.css.AlignSelf <- convertAlign align
+        |> writer --
+            fun this (wrap : Wrap) ->
+                this.css.Wrap <- 
+                    match wrap with
+                    | Wrap.NoWrap -> CSSWrap.NoWrap
+                    | Wrap.Wrap -> CSSWrap.Wrap
+        |> writer --
+            fun this (Flex f) ->
+                this.css.Flex <- f |> float32
+        |> writer --
+            fun this (Margin spacing) ->
+                setSpacing spacing this.css.SetMargin
+        |> writer --
+            fun this (Border spacing) ->
+                setSpacing spacing this.css.SetBorder
+        |> writer --
+            fun this (Padding spacing) ->
+                setSpacing spacing this.css.SetPadding
+        |> writer --
+            fun this (Width width) ->
+                this.css.StyleWidth <- width |> float32
+        |> writer --
+            fun this (Height height) ->
+                this.css.StyleHeight <- height |> float32
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()
