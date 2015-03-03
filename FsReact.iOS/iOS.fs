@@ -157,12 +157,6 @@ module iOS =
             fun this (Height height) ->
                 this.css.StyleHeight <- height |> float32
 
-
-    let buttonReader = 
-        readerFor<Control<UIButton>>.extend controlReader
-        |> reader --
-            fun this -> this.view.Frame |> Convert.rect |> Frame
-
     let eventMounter reader f accessor = 
         accessor
         |> mounter --
@@ -171,55 +165,6 @@ module iOS =
                 let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg reader
                 e.AddHandler handler
                 fun () -> e.RemoveHandler handler
-
-    let buttonAccessor = 
-        writerFor<Control<UIButton>>.extend controlWriter
-        |> defaultValue -- Text ""
-        |> writer --
-            fun this (Text t) ->
-                UIView.PerformWithoutAnimation
-                    (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
-
-        |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
-
-    let labelAccessor = 
-        writerFor<Control<UILabel>>.extend controlWriter
-        |> defaultValue -- Text ""
-        |> writer -- fun this (Text t) -> this.view.Text <- t
-
-    let viewAccessor = 
-        writerFor<View>.extend controlWriter
-        |> defaultValue -- BackgroundColor Color.Transparent
-        |> defaultValue -- AlignItems Auto
-        |> defaultValue -- JustifyContent.Start
-        |> writer --
-            fun this (BackgroundColor color) ->
-                this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
-        |> writer --
-            fun this (direction : LayoutDirection) ->
-                this.css.FlexDirection <-
-                    match direction with
-                    | LayoutDirection.Column -> CSSFlexDirection.Column
-                    | LayoutDirection.Row -> CSSFlexDirection.Row
-
-        |> writer --
-            fun this (justify : JustifyContent) ->
-                this.css.JustifyContent <-
-                    match justify with
-                    | JustifyContent.Start -> CSSJustify.FlexStart
-                    | JustifyContent.Center -> CSSJustify.Center
-                    | JustifyContent.End -> CSSJustify.FlexEnd
-                    | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
-                    | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
-        |> writer --
-            fun this (AlignItems align) ->
-                this.css.AlignItems <- convertAlign align
-        |> writer --
-            fun this (wrap : Wrap) ->
-                this.css.Wrap <- 
-                    match wrap with
-                    | Wrap.NoWrap -> CSSWrap.NoWrap
-                    | Wrap.Wrap -> CSSWrap.Wrap
 
     let inline controlDisposer (v:#Control) = 
         v.view.RemoveFromSuperview()
@@ -251,6 +196,41 @@ module iOS =
             let view = new UICSSLayoutView(css)
             View(view, css)
 
+        let viewAccessor = 
+            writerFor<View>.extend controlWriter
+            |> defaultValue -- BackgroundColor Color.Transparent
+            |> defaultValue -- AlignItems Auto
+            |> defaultValue -- JustifyContent.Start
+            |> writer --
+                fun this (BackgroundColor color) ->
+                    this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
+            |> writer --
+                fun this (direction : LayoutDirection) ->
+                    this.css.FlexDirection <-
+                        match direction with
+                        | LayoutDirection.Column -> CSSFlexDirection.Column
+                        | LayoutDirection.Row -> CSSFlexDirection.Row
+
+            |> writer --
+                fun this (justify : JustifyContent) ->
+                    this.css.JustifyContent <-
+                        match justify with
+                        | JustifyContent.Start -> CSSJustify.FlexStart
+                        | JustifyContent.Center -> CSSJustify.Center
+                        | JustifyContent.End -> CSSJustify.FlexEnd
+                        | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
+                        | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
+            |> writer --
+                fun this (AlignItems align) ->
+                    this.css.AlignItems <- convertAlign align
+            |> writer --
+                fun this (wrap : Wrap) ->
+                    this.css.Wrap <- 
+                        match wrap with
+                        | Wrap.NoWrap -> CSSWrap.NoWrap
+                        | Wrap.Wrap -> CSSWrap.Wrap
+
+
         let mounter (this : View) (index:int) (nested : Control) = 
             this.view.mountControl index nested
 
@@ -265,12 +245,36 @@ module iOS =
             .withDestructor(controlDisposer)
             .instantiate
         
+    let loadImage source =
+        match source with
+        | Resource name -> UIImage.FromBundle(name) 
+
     let createButton = 
+
         let constructor'() = 
             let button = UIButton.FromType(UIButtonType.System)
             let control = createControl button
             control.useSizeThatFits()
             control
+
+        let buttonReader = 
+            readerFor<Control<UIButton>>.extend controlReader
+            |> reader --
+                fun this -> this.view.Frame |> Convert.rect |> Frame
+
+        let buttonAccessor = 
+            writerFor<Control<UIButton>>.extend controlWriter
+            |> defaultValue -- Text ""
+            |> writer --
+                fun this (Text t) ->
+                    UIView.PerformWithoutAnimation
+                        (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
+            |> mounter --
+                fun this (Image i) ->
+                    this.view.SetImage(loadImage i, UIControlState.Normal)
+                    fun () -> this.view.SetImage(null, UIControlState.Normal)
+
+            |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
         controlClassPrototype()
             .withConstructor(constructor')
@@ -278,6 +282,12 @@ module iOS =
             .instantiate
 
     let createLabel =
+
+        let labelAccessor = 
+            writerFor<Control<UILabel>>.extend controlWriter
+            |> defaultValue -- Text ""
+            |> writer -- fun this (Text t) -> this.view.Text <- t
+
         let constructor'() = 
             let label = new UILabel()
             let control = createControl label
@@ -289,23 +299,30 @@ module iOS =
             .withPropertyWriter(labelAccessor)
             .instantiate
 
-    type UIRootView() = 
-        inherit UIView()
+    let createImage = 
 
-        let mutable ourView : UIView = null
+        let writer =
+            writerFor<Control<UIImageView>>.extend controlWriter
+            |> mounter --
+                fun this (source:Source) ->
+                    let image = 
+                        match source with
+                        | Resource name -> UIImage.FromBundle(name)
 
-        member this.clearView() = 
-            ourView.RemoveFromSuperview()
-            ourView <- null
+                    this.view.Image <- image
+                    fun () ->
+                        this.view.Image <- null
 
-        member this.setView(view)  = 
-            assert(ourView = null)
-            ourView <- view
-            this.Add(view)
+        let constructor'() =
+            let image = new UIImageView()
+            let control = createControl image
+            control.useSizeThatFits()
+            control
 
-        override this.LayoutSubviews() = 
-            let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
-            ourView.Frame <- frame
+        controlClassPrototype()
+            .withConstructor(constructor')
+            .withPropertyWriter(writer)
+            .instantiate
 
     type Popover() = 
         let _css = new CSSNode()
@@ -388,6 +405,8 @@ module iOS =
     let registerResources() =
         Registry.register "Button" controlType createButton
         Registry.register "Text" controlType createLabel
+        Registry.register "Image" controlType createImage
+        
         Registry.register "View" controlType createView
         Registry.register "Popover" "Controller" createPopover
 
@@ -397,6 +416,24 @@ module iOS =
         
     let private registerEventRoot mountedRoot = 
         registerEventRoot (dispatchEventAndUpdate mountedRoot)
+
+    type UIRootView() = 
+        inherit UIView()
+
+        let mutable ourView : UIView = null
+
+        member this.clearView() = 
+            ourView.RemoveFromSuperview()
+            ourView <- null
+
+        member this.setView(view)  = 
+            assert(ourView = null)
+            ourView <- view
+            this.Add(view)
+
+        override this.LayoutSubviews() = 
+            let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
+            ourView.Frame <- frame
 
     let renderAsView element = 
         let constructor'() = new UIRootView()

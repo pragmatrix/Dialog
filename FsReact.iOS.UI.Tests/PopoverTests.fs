@@ -38,6 +38,10 @@ let popoverTest =
             for _ in 0..state.count do
                 yield text "Autosize Test" []
             yield button ("Test Autosize "+state.count.ToString()) (this, AddText) []
+
+            // Icon by icons8.com
+            yield image (Resource "Download From Cloud-100.png") [Width 30.; Height 30.]
+            yield imageButton (Resource "Download From Cloud-100.png") (this, AddText) [Width 30.; Height 30.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
     Core.createClass(initialState, update, render)

@@ -10,7 +10,7 @@
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>FsReactiOSUITests</AssemblyName>
     <Name>FsReact.iOS.UI.Tests</Name>
-    <SelectedDevice>iPad 2 iOS 8.1</SelectedDevice>
+    <SelectedDevice>iPad Retina iOS 8.1</SelectedDevice>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
@@ -128,6 +128,7 @@
     <Compile Include="ComponentTests.fs" />
     <Compile Include="PopoverTests.fs" />
     <Compile Include="AppDelegate.fs" />
+    <Content Include="Download From Cloud-100.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

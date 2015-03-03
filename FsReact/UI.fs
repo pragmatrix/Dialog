@@ -4,7 +4,12 @@ module UI =
 
     open FsReact.Core
 
+    type Source = 
+        | Resource of string
+
     type Text = Text of string
+    type Image = Image of Source
+
     type Title = Title of string
     type OnClick = OnClick of (Component * obj)
     type OnDismissed = OnDismissed of (Component * obj)
@@ -101,11 +106,12 @@ module UI =
     type Width = Width of float 
     type Height = Height of float
 
-
     let button text event p = resource "Button" (Props.concat [Text text; OnClick event] p) []
+    let imageButton source event p = resource "Button" (Props.concat [Image source; OnClick event] p) []
     let text text p = resource "Text" (Text text :> obj :: p) []
-    let view nested p = resource "View" p nested
+    let image (source:Source) p = resource "Image" (box source :: p) []
 
+    let view nested p = resource "View" p nested
     let popover title dismissed nested p = resource "Popover" (Props.concat [Title title; OnDismissed dismissed] p) nested
 
-    let mountRoot = Resources.mountRoot 
+    let mountRoot = Resources.mountRoot
