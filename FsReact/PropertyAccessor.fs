@@ -109,8 +109,7 @@ type PropertyWriter<'target> =
             failwithf "native type '%s' does not support mounting / writing property '%s'" typedefof<'target>.Name name
 
     member this.extend (parent: PropertyWriter<'parent>) : PropertyWriter<'target> =
-        let promote f = 
-            fun t -> t |> box |> unbox |> f
+        let promote f t = t |> box |> unbox |> f
 
         let promotedWriters = 
             parent.writers 
