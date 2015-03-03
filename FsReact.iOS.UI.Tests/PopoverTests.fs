@@ -35,6 +35,9 @@ let popoverTest =
                 ] [Anchor anchor]
             | None -> ()
             yield button "Show Popover" (this, ButtonClicked) []
+            for _ in 0..state.count do
+                yield text "Autosize Test" []
+            yield button "Test Autosize" (this, AddText) []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
     Core.createClass(initialState, update, render)

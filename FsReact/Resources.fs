@@ -44,6 +44,7 @@ module Resources =
             propertyWriter: PropertyWriter<'instance>;
             nestingAdapter: NestingAdapter<'instance>;
             scanner: Scanner;
+            updateNotifier: 'instance -> unit;
         }
         with 
         member this.withConstructor c = { this with constructor' = c }
@@ -53,6 +54,7 @@ module Resources =
         member this.withNestingAdapter (mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(mounter, unmounter)}
         member this.withScanner scanner = { this with scanner = scanner }
         member this.withPropertyWriter writer = { this with propertyWriter = writer }
+        member this.withUpdateNotifier notifier = { this with updateNotifier = notifier }
 
     type ResourceClass = 
         static member create() = 
@@ -61,7 +63,8 @@ module Resources =
                 destructor = fun _ -> (); 
                 propertyWriter = PropertyAccessor.writerFor; 
                 nestingAdapter = NestingAdapter<_>.agnostic();
-                scanner = ScanningStrategies.dontScan
+                scanner = ScanningStrategies.dontScan;
+                updateNotifier = fun _ -> ();
             }
  
     let mkNestedResourceKey i (mounted : MountedElement) = 
@@ -75,6 +78,7 @@ module Resources =
             identity: Identity
         ) =
 
+        let _class = class'
         let _instance = class'.constructor'()
         let _writer = class'.propertyWriter
         let _nestingAdapter = class'.nestingAdapter
@@ -82,7 +86,8 @@ module Resources =
 
         let mutable _nested = Dict<string, Resource>()
         
-        let _identityString = snd identity + ":" + fst identity
+        let mkIdentityString identity = fst identity + ":" + snd identity
+        let _identityString = fst identity + ":" + snd identity
 
         let _propertyReconciler = PropertyReconciler<'resource>(_writer, _instance, _identityString)
 
@@ -93,6 +98,7 @@ module Resources =
             | NativeState name ->
                 let resourceKey = mkNestedResourceKey index mounted
                 let identity = ComponentDOM.mkIdentity name resourceKey
+                Trace.mountingResource _identityString index (mkIdentityString identity)
                 let resource = instantiateResource identity (mounted.props |> Props.toList)
                 resource.updateNested mounted
                 _nestingAdapter.mount _instance index resource.instance
@@ -104,6 +110,7 @@ module Resources =
         member this.unmountNested (resource:Resource) = 
             resource.unmounting()
             _nestingAdapter.unmount _instance resource.instance
+            Trace.unmountedResource _identityString (mkIdentityString resource.identity)
             resource.Dispose()
 
         member this.updateNested index (resource : Resource) mounted = 
@@ -146,12 +153,14 @@ module Resources =
                 | _ -> ()
                 this.reconcileNested []
            
-            member this.updateNested mounted = 
+            member this.updateNested mounted =
                 let mounts = class'.scanner mounted
                 let keyedMounts = 
                     mounts 
                     |> List.mapi (fun i m -> mkNestedResourceKey i m, m)
-                (this :> Resource<_>).reconcileNested keyedMounts
+                let this = this :> Resource<_>
+                this.reconcileNested keyedMounts
+                class'.updateNotifier _instance
 
     type ResourceClass<'instance> with
         member this.instantiate identity initialProps = 

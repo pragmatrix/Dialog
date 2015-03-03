@@ -24,7 +24,9 @@ module iOS =
             { left = r.X |> float; top = r.Y |> float; width = r.Width |> float; height = r.Height |> float }
         static member rect (r: Rect) = 
             CGRect(nf r.left, nf r.top, nf r.width, nf r.height)
-
+        static member toSize (width:float, height:float) =
+            CGSize(nf width, nf height)
+ 
     type IOSView = IOSView of UIView
 
     type Control(view: UIView, css: CSSNode) = 
@@ -40,7 +42,7 @@ module iOS =
             let width = css.LayoutWidth
             let height = css.LayoutHeight
             let frame = CGRect(nfloat(left), nfloat(top), nfloat(width), nfloat(height))
-            view.Frame <- frame
+            UIView.PerformWithoutAnimation(fun () -> view.Frame <- frame);
             css.MarkLayoutSeen()
 
     type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
@@ -277,6 +279,10 @@ module iOS =
 
         member val anchor : Reference option = None with get, set
 
+        member this.updateLayout() =
+            let preferred = _rootView.calculatePreferredSize()
+            _contained.PreferredContentSize <-Convert.toSize preferred
+
         interface MountingNotifications with
             member this.mounted() = 
                 match this.anchor with
@@ -338,6 +344,7 @@ module iOS =
             .withPropertyWriter(popoverWriter)
             .withNestingAdapter(mounter, unmounter)
             .withScanner(nestedControlScanner)
+            .withUpdateNotifier(fun p -> p.updateLayout())
             .instantiate
 
     let registerResources() =
