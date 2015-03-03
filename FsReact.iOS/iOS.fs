@@ -64,6 +64,7 @@ module iOS =
         let mutable _preferredSize = (0., 0.)
 
         member this.calculatePreferredSize() = 
+
             css.StyleWidth <- CSSConstants.Undefined
             css.StyleHeight <- CSSConstants.Undefined
 
@@ -76,17 +77,20 @@ module iOS =
             _preferredSize
 
         override this.LayoutSubviews() = 
+
             if (css.Parent <> null) then ()
             else
             let bounds = this.Bounds
             css.StyleWidth <- bounds.Width |> float32
             css.StyleHeight <- bounds.Height |> float32
 
-            if (not css.IsDirty) then ()
+            if (not css.IsDirty) then 
+                ()
             else
 
             css.CalculateLayout()
             if (not css.HasNewLayout) then ()
+            else
             this.updateCSS()
             css.MarkLayoutSeen()
 
@@ -431,6 +435,10 @@ module iOS =
             ourView <- view
             this.Add(view)
 
+        member this.updateLayout() = 
+            assert(ourView <> null)
+            ourView.SetNeedsLayout()
+
         override this.LayoutSubviews() = 
             let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
             ourView.Frame <- frame
@@ -450,6 +458,9 @@ module iOS =
                 .withConstructor(constructor')
                 .withNestingAdapter(mountView, unmountView)
                 .withScanner(nestedControlScanner)
+                // we need to kick the layout here, in case LayoutSubviews() is not called 
+                // on the nested view, which may happen, when structural changes made to views further down only.
+                .withUpdateNotifier(fun rv -> rv.updateLayout())
                 .instantiate ("rootView", "/") []
 
         let systemResource = 

@@ -24,24 +24,29 @@ let popoverTest =
         let state = this.state
 
         view [
-            match state.anchor with
-            | Some anchor ->
-                yield popover "This is a popover" (this, PopoverDismissed) [
-                    view [
-                        for _ in 0..state.count do
-                            yield text "Popover Content" []
-                        yield button "Test Autosize" (this, AddText) []
-                    ] []
-                ] [Anchor anchor]
-            | None -> ()
-            yield button "Show Popover" (this, ButtonClicked) []
-            for _ in 0..state.count do
-                yield text "Autosize Test" []
-            yield button ("Test Autosize "+state.count.ToString()) (this, AddText) []
+            view [
+                match state.anchor with
+                | Some anchor ->
+                    yield popover "This is a popover" (this, PopoverDismissed) [
+                        view [
+                            view [
+                                for _ in 0..state.count do
+                                    yield text "Popover Content" []
+                                yield button "Test Autosize" (this, AddText) []
+                            ] []
+                        ] []
+                    ] [Anchor anchor]
+                | None -> ()
+                yield button "Show Popover" (this, ButtonClicked) []
+                for _ in 0..state.count do
+                    yield text "Autosize Test" []
+                yield button ("Test Autosize "+state.count.ToString()) (this, AddText) []
 
-            // Icon by icons8.com
-            yield image (Resource "Download From Cloud-100.png") [Width 30.; Height 30.]
-            yield imageButton (Resource "Download From Cloud-100.png") (this, AddText) [Width 30.; Height 30.]
+                // Icon by icons8.com
+                yield image (Resource "Download From Cloud-100.png") [Width 30.; Height 30.]
+                yield imageButton (Resource "Download From Cloud-100.png") (this, AddText) [Width 30.; Height 30.]
+                yield view [] [BackgroundColor Color.Black; AlignSelf.Stretch; Height 1.]
+            ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
     Core.createClass(initialState, update, render)

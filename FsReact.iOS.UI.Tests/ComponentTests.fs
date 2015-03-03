@@ -106,3 +106,26 @@ let rectFromEvent =
 
 
     Core.createClass(initialState, update, render)
+
+
+let nestedViewWithLayoutChange = 
+
+    let initialState () = { count = 0 }
+
+    let update this e =
+        let state = this.state
+        match e.message with 
+        | ButtonClicked -> { state with count = state.count+1 }
+
+    let render this = 
+        let state = this.state
+
+        view [
+            view [
+                yield button ("Click") (this, ButtonClicked) []
+                if this.state.count % 2 = 1 then
+                    yield text ("hoi") []
+            ] []
+        ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
+        
+    Core.createClass(initialState, update, render);

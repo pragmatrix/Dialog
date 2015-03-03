@@ -30,8 +30,9 @@ type AppDelegate () =
         let currentTest = replaceRoot
         let currentTest = replaceNested
         let currentTest = twoComponents
+        let currentTest = nestedViewWithLayoutChange
         let currentTest = popoverTest
-
+        
         let createView() = renderAsView (element currentTest [])
         
         _window <- new UIWindow (UIScreen.MainScreen.Bounds)
