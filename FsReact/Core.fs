@@ -78,7 +78,7 @@ type Define =
             getInitialState = fun () -> Unchecked.defaultof<'s>
             getDefaultProps = fun () -> [];
             update = fun (c:Component<'e, 's>) _ -> c.state;
-            render = fun (c:Component<'e, 's>) -> 
+            render = fun (_:Component<'e, 's>) -> 
                 failwith "render function not implemented";
         }
 

@@ -4,7 +4,7 @@ open ComponentDOM
 
 type Scanner = MountedElement -> MountedElement list
 
-module ScanningStrategies = 
+module Scanners = 
 
     type ScanInclusion = 
         | IncludeAndScanNested

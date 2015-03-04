@@ -34,7 +34,7 @@ module Services =
     let typeOf name = registry.[name] |> fst
 
     let recursiveNativeTypeScanner typeTest = 
-        ScanningStrategies.recursiveNativeNameScanner (typeOf >> typeTest)
+        Scanners.recursiveNativeNameScanner (typeOf >> typeTest)
 
     type NestingAdapter<'target> = 
         { mount : 'target -> int -> obj -> unit; unmount : 'target -> obj -> unit }
@@ -65,6 +65,7 @@ module Services =
         member this.MountingNotifier notifier = { this with mountingNotifier = notifier }
 
     type Define with
+
         static member Service() = 
 
             let notifyMounted i = 
@@ -82,7 +83,7 @@ module Services =
                 destructor = fun _ -> (); 
                 propertyWriter = PropertyAccessor.writerFor; 
                 nestingAdapter = NestingAdapter<_>.agnostic();
-                scanner = ScanningStrategies.dontScan;
+                scanner = Scanners.dontScan;
                 updateNotifier = fun _ -> ();
                 mountingNotifier = notifyMounted, notifyUnmounting
             }

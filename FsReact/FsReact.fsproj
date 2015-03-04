@@ -49,7 +49,7 @@
     <Compile Include="PropertyReconciler.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="ComponentDOM.fs" />
-    <Compile Include="ScanningStrategies.fs" />
+    <Compile Include="Scanners.fs" />
     <Compile Include="Services.fs" />
     <Compile Include="UI.fs" />
   </ItemGroup>
