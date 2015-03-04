@@ -47,7 +47,7 @@ type Component<'state, 'event> =
         member this.render() = this.class'.render this
         member this.dispatchEvent event =
             this.state <- this.class'.update this (event.unboxed())
-        member this.properties = this.props |> Props.toProperties
+        member this.properties = this.props.properties
 
 and ComponentClass<'state, 'event> =
     { 
@@ -62,13 +62,13 @@ and ComponentClass<'state, 'event> =
     member this.Update(update) = { this with update = update }
 
     interface ComponentClass with
-        member this.createComponent props =
+        member this.createComponent properties =
             let state = this.getInitialState()
             let defaultProperties = this.getDefaultProperties()
             let props = 
                 defaultProperties
                 |> Props.ofProperties
-                |> Props.apply props
+            let props = props.apply properties
             { class' = this; props = props; state = state } :> _
 
 type Define =

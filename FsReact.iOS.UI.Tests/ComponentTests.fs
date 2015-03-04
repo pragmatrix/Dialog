@@ -13,9 +13,9 @@ let iconView =
 
     let render this = 
         let props = this.props
-        let content = props |> Props.get (function Content c -> c)
-        let image = props |> Props.get (function Image i -> i)
-        let onClick = props |> Props.get (function OnClick oc -> oc)
+        let content = props.get (function Content c -> c)
+        let image = props.get (function Image i -> i)
+        let onClick = props.get (function OnClick oc -> oc)
 
         view [
             content
