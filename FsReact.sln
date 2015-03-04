@@ -11,6 +11,13 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsReact.iOS.UI.Tests", "FsR
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsReact.Tests", "FsReact.Tests\FsReact.Tests.fsproj", "{630C91F9-1186-43D1-8C8B-616B05993411}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{45EC6212-FD29-43C4-81CD-37267FB052C6}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

@@ -10,3 +10,4 @@ _NCrunch_*
 /.apdisk
 /.DS_Store
 /packages/
+/.nuget/NuGet.exe
