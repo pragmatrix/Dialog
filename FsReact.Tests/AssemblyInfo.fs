@@ -2,12 +2,12 @@
 open System.Reflection
 open System.Runtime.CompilerServices
 
-[<assembly: AssemblyTitle("FsReact.iOS.Tests")>]
+[<assembly: AssemblyTitle("FsReact.Tests")>]
 [<assembly: AssemblyDescription("")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("")>]
-[<assembly: AssemblyProduct("FsReact.iOS.Tests")>]
-[<assembly: AssemblyCopyright("Copyright ©  2015")>]
+[<assembly: AssemblyProduct("FsReact.Tests")>]
+[<assembly: AssemblyCopyright("Copyright © 2015 Armin Sander")>]
 [<assembly: AssemblyTrademark("")>]
 [<assembly: AssemblyCulture("")>]
 // The assembly version has the format {Major}.{Minor}.{Build}.{Revision}

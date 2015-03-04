@@ -2,7 +2,6 @@ module ComponentTests
 
 open NUnit.Framework
 
-open UIKit
 open FsReact
 open FsReact.Core
 
