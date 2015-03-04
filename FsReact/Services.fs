@@ -36,6 +36,10 @@ module Services =
     let recursiveNativeTypeScanner typeTest = 
         ScanningStrategies.recursiveNativeNameScanner (typeOf >> typeTest)
 
+    type NestingAdapter<'target> = 
+        { mount : 'target -> int -> obj -> unit; unmount : 'target -> obj -> unit }
+        static member inline agnostic<'t>() : NestingAdapter<'t> = { mount = (fun _ _ _ -> ()); unmount = (fun _ _ -> ()) }
+
     (* Service specification *)
 
     type ServiceClass<'instance> = { 
@@ -51,8 +55,10 @@ module Services =
         member this.Constructor c = { this with constructor' = c }
         member this.Destructor d = { this with destructor = d }
         member this.Writer w = { this with propertyWriter = w }
-        member this.NestingAdapter na = { this with nestingAdapter = na }
-        member this.NestingAdapter (mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(mounter, unmounter)}
+        member this.NestingAdapter (mounter : 'instance -> int -> 'n -> unit, unmounter : 'instance-> 'n -> unit) =
+            let mounter t i n = mounter t i (unbox n)
+            let unmounter t n = unmounter t (unbox n)
+            { this with nestingAdapter = { mount = mounter; unmount = unmounter }}
         member this.Scanner scanner = { this with scanner = scanner }
         member this.PropertyWriter writer = { this with propertyWriter = writer }
         member this.UpdateNotifier notifier = { this with updateNotifier = notifier }
