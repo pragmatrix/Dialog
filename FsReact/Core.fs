@@ -40,7 +40,7 @@ and ComponentClass =
 type Component<'event, 'state> =
     {
         _class : ComponentClass<'event, 'state>
-        props : Props.Props;
+        props : Props;
         mutable state : 'state;
     } 
     interface Component with
@@ -56,8 +56,12 @@ and ComponentClass<'event, 'state> =
         update : Component<'event, 'state> -> Event<'event> -> 'state;
         render: Component<'event, 'state> -> Element
     }
-    interface ComponentClass
-        with
+    member this.GetInitialState(initial) = { this with getInitialState = initial }
+    member this.InitialState(initial) = { this with getInitialState = fun () -> initial }
+    member this.Render(render) = { this with render = render }
+    member this.Update(update) = { this with update = update }
+
+    interface ComponentClass with
         member this.createComponent props =
             let state = this.getInitialState()
             let defaultProps = this.getDefaultProps()
@@ -67,21 +71,24 @@ and ComponentClass<'event, 'state> =
                 |> Props.apply props
             { _class = this; props = props; state = state } :> _
 
-module Core =
+type Define =
 
-    (* Components *)
-
-    let createClass<'event, 'state>(getInitialState, update, render) : ComponentClass<'event, 'state> = 
+    static member Component<'e, 's>() = 
         { 
-            getInitialState = getInitialState;
+            getInitialState = fun () -> Unchecked.defaultof<'s>
             getDefaultProps = fun () -> [];
-            update = update;
-            render = render;
+            update = fun (c:Component<'e, 's>) _ -> c.state;
+            render = fun (c:Component<'e, 's>) -> 
+                failwith "render function not implemented";
         }
 
-    let element c p = { kind = Component c; props = p; nested = [] }
+module Core =
+    // Render a component
+    
+    let render c p = { kind = ElementKind.Component c; props = p; nested = [] }
     let resource name p nested = { kind = Native name; props = p; nested = nested }
 
+module Events =
     (* Event Handling *)
 
     type EventRoot = Component -> Event<obj> -> unit

@@ -48,18 +48,18 @@ module Resources =
             mountingNotifier: ('instance -> unit) * ('instance -> unit);
         }
         with 
-        member this.withConstructor c = { this with constructor' = c }
-        member this.withDestructor d = { this with destructor = d }
-        member this.withWriter w = { this with propertyWriter = w }
-        member this.withNestingAdapter na = { this with nestingAdapter = na }
-        member this.withNestingAdapter (mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(mounter, unmounter)}
-        member this.withScanner scanner = { this with scanner = scanner }
-        member this.withPropertyWriter writer = { this with propertyWriter = writer }
-        member this.withUpdateNotifier notifier = { this with updateNotifier = notifier }
-        member this.withMountingNotifier notifier = { this with mountingNotifier = notifier }
+        member this.Constructor c = { this with constructor' = c }
+        member this.Destructor d = { this with destructor = d }
+        member this.Writer w = { this with propertyWriter = w }
+        member this.NestingAdapter na = { this with nestingAdapter = na }
+        member this.NestingAdapter (mounter, unmounter) = { this with nestingAdapter = NestingAdapter<_, _>(mounter, unmounter)}
+        member this.Scanner scanner = { this with scanner = scanner }
+        member this.PropertyWriter writer = { this with propertyWriter = writer }
+        member this.UpdateNotifier notifier = { this with updateNotifier = notifier }
+        member this.MountingNotifier notifier = { this with mountingNotifier = notifier }
 
-    type ResourceClass = 
-        static member create() = 
+    type Define with
+        static member ResourceClass() = 
 
             let notifyMounted i = 
                 match box i with
@@ -173,7 +173,7 @@ module Resources =
                 class'.updateNotifier _instance
 
     type ResourceClass<'instance> with
-        member this.instantiate identity initialProps = 
+        member this.Instantiate identity initialProps = 
             let r = 
                 new Resource<_>(this, identity)
             (r:>Resource).update initialProps
@@ -188,7 +188,8 @@ module Resources =
 
     module Registry =
 
-        let register (name:string) (type': string) (f: Identity -> Properties -> Resource<'resource>) = 
+        let register (name:string) (type': string) (c: ResourceClass<_>) = 
+            let f = c.Instantiate
             let f i p = f i p :> Resource
             registry <- registry.Add(name, (type', f))
 
@@ -226,9 +227,8 @@ module Resources =
 
 
     let private systemResourceClassPrototype = 
-        ResourceClass
-            .create()
-            .withConstructor(fun () -> SystemResource())
+        Define.ResourceClass()
+            .Constructor(fun () -> SystemResource())
 
     open ScanningStrategies
 
@@ -243,6 +243,6 @@ module Resources =
         let scanner = recursiveNativeTypeScanner inclusionTest
 
         systemResourceClassPrototype
-            .withScanner(scanner)
-            .instantiate
+            .Scanner(scanner)
+            .Instantiate
   

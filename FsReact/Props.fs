@@ -1,8 +1,10 @@
 ﻿namespace FsReact
 
+type Props = Map<string, obj>
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Props =
 
-    type Props = Map<string, obj>
     type Properties = obj list
 
     let empty : Props = Map.empty
@@ -54,5 +56,3 @@ module Props =
         | Some p -> p
         | None ->         
         failwithf "Property %A not found" (typedefof<'property>.Name)
-
-                 

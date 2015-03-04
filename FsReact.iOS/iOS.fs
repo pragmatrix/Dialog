@@ -171,7 +171,7 @@ module iOS =
         |> mounter --
             fun this e ->
                 let (comp, msg), (e:IEvent<_, _>) = f this e
-                let handler = mkHandler -- fun _ _ -> dispatchEvent comp -- mkEvent this msg reader
+                let handler = mkHandler -- fun _ _ -> Events.dispatchEvent comp -- mkEvent this msg reader
                 e.AddHandler handler
                 fun () -> e.RemoveHandler handler
 
@@ -183,7 +183,8 @@ module iOS =
         Control<_>(view, CSSNode())
     
     let controlClassPrototype() = 
-        ResourceClass.create().withDestructor(controlDisposer)
+        Define.ResourceClass()
+            .Destructor(controlDisposer)
 
     let controlType = "Control"
     
@@ -243,12 +244,11 @@ module iOS =
             this.view.unmountControl nested
 
         controlClassPrototype()
-            .withConstructor(constructor')
-            .withScanner(nestedControlScanner)
-            .withNestingAdapter(mounter, unmounter)
-            .withPropertyWriter(viewAccessor)
-            .withDestructor(controlDisposer)
-            .instantiate
+            .Constructor(constructor')
+            .Scanner(nestedControlScanner)
+            .NestingAdapter(mounter, unmounter)
+            .PropertyWriter(viewAccessor)
+            .Destructor(controlDisposer)
         
     let loadImage source =
         match source with
@@ -282,9 +282,8 @@ module iOS =
             |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
         controlClassPrototype()
-            .withConstructor(constructor')
-            .withPropertyWriter(buttonAccessor)
-            .instantiate
+            .Constructor(constructor')
+            .PropertyWriter(buttonAccessor)
 
     let createLabel =
 
@@ -300,9 +299,8 @@ module iOS =
             control
 
         controlClassPrototype()
-            .withConstructor(constructor')
-            .withPropertyWriter(labelAccessor)
-            .instantiate
+            .Constructor(constructor')
+            .PropertyWriter(labelAccessor)
 
     let createImage = 
 
@@ -325,9 +323,8 @@ module iOS =
             control
 
         controlClassPrototype()
-            .withConstructor(constructor')
-            .withPropertyWriter(writer)
-            .instantiate
+            .Constructor(constructor')
+            .PropertyWriter(writer)
 
     type Popover() = 
         let _css = new CSSNode()
@@ -398,14 +395,12 @@ module iOS =
         let unmounter (this: Popover) (nested: Control) =
             this.rootView.unmountControl (nested)
 
-        ResourceClass
-            .create()
-            .withConstructor(constructor')
-            .withPropertyWriter(popoverWriter)
-            .withNestingAdapter(mounter, unmounter)
-            .withScanner(nestedControlScanner)
-            .withUpdateNotifier(fun p -> p.updateLayout())
-            .instantiate
+        Define.ResourceClass()
+            .Constructor(constructor')
+            .PropertyWriter(popoverWriter)
+            .NestingAdapter(mounter, unmounter)
+            .Scanner(nestedControlScanner)
+            .UpdateNotifier(fun p -> p.updateLayout())
 
     let registerResources() =
         Registry.register "Button" controlType createButton
@@ -420,7 +415,7 @@ module iOS =
         root.update()
         
     let private registerEventRoot mountedRoot = 
-        registerEventRoot (dispatchEventAndUpdate mountedRoot)
+        Events.registerEventRoot (dispatchEventAndUpdate mountedRoot)
 
     type UIRootView() = 
         inherit UIView()
@@ -454,15 +449,14 @@ module iOS =
             view.clearView()
 
         let viewResource = 
-            ResourceClass
-                .create()
-                .withConstructor(constructor')
-                .withNestingAdapter(mountView, unmountView)
-                .withScanner(nestedControlScanner)
+            Define.ResourceClass()
+                .Constructor(constructor')
+                .NestingAdapter(mountView, unmountView)
+                .Scanner(nestedControlScanner)
                 // we need to kick the layout here, in case LayoutSubviews() is not called 
                 // on the nested view, which may happen, when structural changes made to views further down only.
-                .withUpdateNotifier(fun rv -> rv.updateLayout())
-                .instantiate ("rootView", "/") []
+                .UpdateNotifier(fun rv -> rv.updateLayout())
+                .Instantiate ("rootView", "/") []
 
         let systemResource = 
             Resources.createSystemResource ["Controller"] ("system", "/") []

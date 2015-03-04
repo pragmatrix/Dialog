@@ -12,8 +12,6 @@ module ComponentDOM =
     type Identity = string * string 
     let mkIdentity name key = (name, key)
 
-    type Props = Props.Props
-
     type MountedState = 
         | NativeState of string
         | ComponentState of Component

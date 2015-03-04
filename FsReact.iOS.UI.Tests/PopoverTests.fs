@@ -11,7 +11,7 @@ type Events =
 
 let popoverTest = 
 
-    let initialState () = { anchor = None; count = 0 }
+    let initialState = { anchor = None; count = 0 }
 
     let update this e = 
         let state = this.state
@@ -49,4 +49,8 @@ let popoverTest =
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
-    Core.createClass(initialState, update, render)
+    Define.Component()
+        .InitialState(initialState)
+        .Update(update)
+        .Render(render)
+        

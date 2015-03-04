@@ -20,8 +20,8 @@ type CoreTests() =
 
         let f = fun c e -> ()
         let f2 = fun c e -> ()
-        let registered = registerEventRoot f
-        let registered2 = registerEventRoot f2
+        let registered = Events.registerEventRoot f
+        let registered2 = Events.registerEventRoot f2
         
         registered()
         registered2()
@@ -35,7 +35,7 @@ type CoreTests() =
         let f = fun c e ->
             delivered := true
 
-        let registered = registerEventRoot f
+        let registered = Events.registerEventRoot f
 
         let ev = {
             message = null
@@ -43,7 +43,7 @@ type CoreTests() =
             sender = Reference.empty
         }
 
-        dispatchEvent (c :> Component) ev
+        Events.dispatchEvent (c :> Component) ev
         registered()
         Assert.True(!delivered)
     

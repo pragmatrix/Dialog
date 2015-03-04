@@ -9,6 +9,7 @@ open FsReact.Core
 
 open LayoutTests
 open PopoverTests
+open ComponentTests
 
 [<Register ("AppDelegate")>]
 type AppDelegate () =
@@ -32,8 +33,10 @@ type AppDelegate () =
         let currentTest = twoComponents
         let currentTest = nestedViewWithLayoutChange
         let currentTest = popoverTest
+        let currentTest = iconViewTest
+        let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
         
-        let createView() = renderAsView (element currentTest [])
+        let createView() = renderAsView (render currentTest [])
         
         _window <- new UIWindow (UIScreen.MainScreen.Bounds)
 

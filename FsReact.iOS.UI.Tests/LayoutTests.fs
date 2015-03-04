@@ -8,8 +8,6 @@ type CounterState = { count: int }
 
 let counter = 
 
-    let initialState () = { count = 0 }
-
     let update this e =
         let state = this.state
         match e.message with 
@@ -23,11 +21,12 @@ let counter =
             button ("Click to Count ") (this, ButtonClicked) []
         ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
         
-    Core.createClass(initialState, update, render);
-
+    Define.Component()
+        .InitialState({ count = 0 })
+        .Update(update)
+        .Render(render)
+        
 let replaceRoot = 
-
-    let initialState () = { count = 0 }
 
     let update this e = 
         let state = this.state
@@ -41,10 +40,12 @@ let replaceRoot =
             button "Switch to B" (this, ButtonClicked) []
         else 
             button "Switch to A" (this, ButtonClicked) []
-            
 
-    Core.createClass(initialState, update, render)
-
+    Define.Component()
+        .InitialState({count = 0})
+        .Update(update)
+        .Render(render)
+        
 let inline ( -- ) l r = l r
 
 let replaceNested = 
@@ -66,22 +67,25 @@ let replaceNested =
                 yield button "Switch to A" (this, ButtonClicked) []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
-
-    Core.createClass(initialState, update, render)
-
+    Define.Component()
+        .InitialState({count=0})
+        .Update(update)
+        .Render(render)
+        
 let twoComponents : ComponentClass<unit, unit> = 
-    let initialState() = ()
 
     let update update this = ()
 
     let render this = 
         view [
-            Core.element counter []
-            Core.element replaceNested []
+            render counter []
+            render replaceNested []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center ]
 
-
-    Core.createClass(initialState, update, render)
+    Define.Component()
+        .InitialState(())
+        .Update(update)
+        .Render(render)
 
 type RectState = { rect: Rect option }
 
@@ -105,9 +109,11 @@ let rectFromEvent =
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
 
-    Core.createClass(initialState, update, render)
-
-
+    Define.Component()
+        .InitialState({ rect = None })
+        .Update(update)
+        .Render(render)
+        
 let nestedViewWithLayoutChange = 
 
     let initialState () = { count = 0 }
@@ -128,4 +134,31 @@ let nestedViewWithLayoutChange =
             ] []
         ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
         
-    Core.createClass(initialState, update, render);
+    Define.Component()
+        .GetInitialState(initialState)
+        .Update(update)
+        .Render(render)
+
+(* CSS Layout Problems *)
+
+let centeredItemsDoNotUseSpaceBetweenInRowDirection = 
+    
+    let render this =
+
+        let block = view [] [Width 20.; Height 20.; BackgroundColor Color.Black]
+
+        view [
+            view [
+                view [] [BackgroundColor Color.Black; Width 300.; Height 1.]
+                view [
+                    block 
+                    block 
+                    block
+                ] [LayoutDirection.Row; JustifyContent.SpaceBetween]
+                view [] [BackgroundColor Color.Black; Width 300.; Height 1.]
+            ] []
+        ] [AlignItems.Center; JustifyContent.Center; BackgroundColor Color.White]
+
+    Define.Component<unit, unit>()
+        .InitialState(())
+        .Render(render)

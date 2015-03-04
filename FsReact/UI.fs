@@ -2,7 +2,7 @@
 
 module UI =
 
-    open FsReact.Core
+    open Core
 
     type Source = 
         | Resource of string
@@ -106,6 +106,8 @@ module UI =
     type Width = Width of float 
     type Height = Height of float
 
+    let render = Core.render
+
     let button text event p = resource "Button" (Props.concat [Text text; OnClick event] p) []
     let imageButton source event p = resource "Button" (Props.concat [Image source; OnClick event] p) []
     let text text p = resource "Text" (Text text :> obj :: p) []
@@ -113,5 +115,6 @@ module UI =
 
     let view nested p = resource "View" p nested
     let popover title dismissed nested p = resource "Popover" (Props.concat [Title title; OnDismissed dismissed] p) nested
+
 
     let mountRoot = Resources.mountRoot
