@@ -116,7 +116,7 @@ module Services =
 
         member this.mountNested index mounted = 
             match mounted.state with
-            | NativeState name ->
+            | ServiceState name ->
                 let key = mkNestedServiceKey index mounted
                 let identity = ComponentDOM.mkIdentity name key
                 Trace.mountingService _identityString index (mkIdentityString identity)
@@ -136,7 +136,7 @@ module Services =
 
         member this.updateNested index (nested : Service) mounted = 
             match mounted.state with
-            | NativeState name ->
+            | ServiceState name ->
                 if fst nested.identity = name then
                     nested.update (mounted.props |> Props.toProperties)
                     nested.updateNested mounted

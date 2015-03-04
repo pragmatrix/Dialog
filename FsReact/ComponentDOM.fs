@@ -13,7 +13,7 @@ module ComponentDOM =
     let mkIdentity name key = (name, key)
 
     type MountedState = 
-        | NativeState of string
+        | ServiceState of string
         | ComponentState of Component
 
     type MountedElement = 
@@ -25,14 +25,14 @@ module ComponentDOM =
             orderedKeys: string list;
         }
         with
-        member this.applyProps props =
+        member this.applyProperties properties =
             let newProps =
-                this.props |> Props.apply props
+                this.props |> Props.apply properties
             { this with props = newProps }
 
         member this.identity =
             match this.state with
-            | NativeState name -> mkIdentity name this.key
+            | ServiceState name -> mkIdentity name this.key
             | ComponentState _ -> mkIdentity "[component]" this.key
 
 
@@ -54,7 +54,7 @@ module ComponentDOM =
                 ComponentState c, [c.render()]
 
             | Service name ->
-                NativeState name, element.nested
+                ServiceState name, element.nested
 
         let mounted = 
             {
@@ -74,13 +74,13 @@ module ComponentDOM =
     and reconcile (mounted: MountedElement) (element: Element) = 
         match mounted.state, element.kind with
         | ComponentState c, Component eClass when obj.ReferenceEquals(c.class', eClass) ->
-            let mounted = mounted.applyProps element.properties
+            let mounted = mounted.applyProperties element.properties
             Trace.renderingComponent "" mounted.key
             let nested = c.render()
             reconcileNested mounted [nested]
 
-        | NativeState ln, Service rn  when ln = rn ->
-            let mounted = mounted.applyProps element.properties
+        | ServiceState ln, Service rn  when ln = rn ->
+            let mounted = mounted.applyProperties element.properties
             let nested = element.nested
             reconcileNested mounted nested
 

@@ -30,7 +30,7 @@ module Scanners =
                     match nested.state with
                     | ComponentState _ ->
                         yield! scan nested
-                    | NativeState n ->
+                    | ServiceState n ->
                     match nameTest n with
                     | IncludeAndScanNested ->
                         yield nested
