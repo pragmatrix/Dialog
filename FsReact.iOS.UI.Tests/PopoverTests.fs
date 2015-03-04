@@ -31,7 +31,7 @@ let popoverTest =
                         view [
                             view [
                                 for _ in 0..state.count do
-                                    yield text "Popover Content" []
+                                    yield label "Popover Content" []
                                 yield button "Test Autosize" (this, AddText) []
                             ] []
                         ] [Margin (Spacing.All 10.)]
@@ -39,7 +39,7 @@ let popoverTest =
                 | None -> ()
                 yield button "Show Popover" (this, ButtonClicked) []
                 for _ in 0..state.count do
-                    yield text "Autosize Test" []
+                    yield label "Autosize Test" []
                 yield button ("Test Autosize "+state.count.ToString()) (this, AddText) []
 
                 // Icon by icons8.com

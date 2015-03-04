@@ -199,7 +199,7 @@ module iOS =
 
         recursiveNativeTypeScanner typeTester
 
-    let createView = 
+    let viewService = 
         
         let constructor'() = 
             let css = CSSNode()
@@ -254,7 +254,7 @@ module iOS =
         match source with
         | Resource name -> UIImage.FromBundle(name) 
 
-    let createButton = 
+    let buttonService = 
 
         let constructor'() = 
             let button = UIButton.FromType(UIButtonType.System)
@@ -285,7 +285,7 @@ module iOS =
             .Constructor(constructor')
             .PropertyWriter(buttonAccessor)
 
-    let createLabel =
+    let labelService =
 
         let labelAccessor = 
             writerFor<Control<UILabel>>.extend controlWriter
@@ -302,7 +302,7 @@ module iOS =
             .Constructor(constructor')
             .PropertyWriter(labelAccessor)
 
-    let createImage = 
+    let imageService = 
 
         let writer =
             writerFor<Control<UIImageView>>.extend controlWriter
@@ -384,7 +384,7 @@ module iOS =
                 this.anchor <- None
         |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
             
-    let createPopover =
+    let PopoverService =
     
         let constructor'() = 
             printf "Popover is constructing"
@@ -457,9 +457,9 @@ module iOS =
         registerEventRoot mounted |> ignore
         viewService.instance :> UIView
 
-    Registry.register "Button" controlType createButton
-    Registry.register "Text" controlType createLabel
-    Registry.register "Image" controlType createImage
+    Registry.register "Button" controlType buttonService
+    Registry.register "Label" controlType labelService
+    Registry.register "Image" controlType imageService
         
-    Registry.register "View" controlType createView
-    Registry.register "Popover" "Controller" createPopover
+    Registry.register "View" controlType viewService
+    Registry.register "Popover" "Controller" PopoverService

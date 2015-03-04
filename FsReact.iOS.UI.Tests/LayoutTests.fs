@@ -17,7 +17,7 @@ let counter =
         let state = this.state
 
         view [
-            text ("counter: " + state.count.ToString()) []
+            label ("counter: " + state.count.ToString()) []
             button ("Click to Count ") (this, ButtonClicked) []
         ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
         
@@ -105,7 +105,7 @@ let rectFromEvent =
 
         view [
             button "Switch to B" (this, ButtonClicked) []
-            text (sprintf "rect of button: %A"  state.rect) []
+            label (sprintf "rect of button: %A"  state.rect) []
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
 
@@ -130,7 +130,7 @@ let nestedViewWithLayoutChange =
             view [
                 yield button ("Click") (this, ButtonClicked) []
                 if this.state.count % 2 = 1 then
-                    yield text ("hoi") []
+                    yield label ("hoi") []
             ] []
         ] [ BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
         

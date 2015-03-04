@@ -39,8 +39,8 @@ let iconViewTest =
 
     let render this = 
 
-        let content1 = text "Hello" []
-        let content2 = text "IconView Component" []
+        let content1 = label "Hello" []
+        let content2 = label "IconView Component" []
 
         view [
             view [

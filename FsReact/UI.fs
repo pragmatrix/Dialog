@@ -110,7 +110,7 @@ module UI =
 
     let button text event p = service "Button" (Props.concat [Text text; OnClick event] p) []
     let imageButton source event p = service "Button" (Props.concat [Image source; OnClick event] p) []
-    let text text p = service "Text" (Text text :> obj :: p) []
+    let label text p = service "Label" (Text text :> obj :: p) []
     let image (source:Source) p = service "Image" (box source :: p) []
 
     let view nested p = service "View" p nested

@@ -38,7 +38,7 @@ module Services =
 
     type NestingAdapter<'target> = 
         { mount : 'target -> int -> obj -> unit; unmount : 'target -> obj -> unit }
-        static member inline agnostic<'t>() : NestingAdapter<'t> = { mount = (fun _ _ _ -> ()); unmount = (fun _ _ -> ()) }
+        static member agnostic<'t>() : NestingAdapter<'t> = { mount = (fun _ _ _ -> ()); unmount = (fun _ _ -> ()) }
 
     (* Service specification *)
 
