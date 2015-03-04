@@ -3,7 +3,7 @@
 open System.Reflection
 
 [<assembly: AssemblyTitle("FsReact")>]
-[<assembly: AssemblyDescription("A library for specifying declarative, code-drive user interfaces. Inspired by Facebook React.")>]
+[<assembly: AssemblyDescription("Declarative, code-driven user interfaces in F#. Inspired by Facebook's React.")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("Armin Sander")>]
 [<assembly: AssemblyProduct("FsReact")>]
