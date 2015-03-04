@@ -23,8 +23,7 @@ module Services =
         abstract mounted : unit -> unit
         abstract unmounting : unit -> unit
 
-
-    (* Registration of service constructors *)
+    (* Registration of Services *)
 
     let mutable private registry = Map.empty<string, string * (Identity -> Properties -> Service)>
     
