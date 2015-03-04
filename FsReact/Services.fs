@@ -2,9 +2,10 @@
 
 module Services =
 
-    open FsReact
     open System
+    open FsReact
     open ComponentDOM
+    open Scanners
 
     type MountingNotifications = 
         // notified after all nested elements were mounted
@@ -234,8 +235,6 @@ module Services =
     let private systemServicePrototype = 
         Define.Service()
             .Constructor(fun () -> SystemService())
-
-    open ScanningStrategies
 
     let createSystemService (nestedRootTypes : string list) = 
 

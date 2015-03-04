@@ -1,9 +1,9 @@
 ﻿namespace FsReact
 
 open FsReact
-open FsReact.Core
 open FsReact.UI
 open FsReact.Services
+open FsReact.Scanners
 
 open CoreGraphics
 open UIKit
@@ -14,8 +14,6 @@ open System
 open System.Collections.Generic
 
 module iOS =
-
-    open ScanningStrategies
 
     let private nf (v:float) = nfloat(v)
 
@@ -116,7 +114,7 @@ module iOS =
     open PropertyAccessor
 
     let mkHandler handler = EventHandler handler
-    let mkEvent target msg reader = { message = msg; props = []; sender = ServiceReference(target, reader) }
+    let mkEvent target msg reader = { message = msg; props = []; sender = Services.ServiceReference(target, reader) }
 
     let private convertAlign align = 
         match align with
