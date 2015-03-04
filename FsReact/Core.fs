@@ -25,7 +25,7 @@ type Event<'event> = { message: 'event; props: Properties; sender: Reference }
 
 type ElementKind = 
     | Component of ComponentClass
-    | Native of string
+    | Service of string
 
 and Element = { kind: ElementKind; props: Properties; nested: Element list }
 
@@ -37,9 +37,9 @@ and Component =
 and ComponentClass = 
     abstract createComponent : Properties -> Component
 
-type Component<'event, 'state> =
+type Component<'state, 'event> =
     {
-        _class : ComponentClass<'event, 'state>
+        _class : ComponentClass<'state, 'event>
         props : Props;
         mutable state : 'state;
     } 
@@ -49,12 +49,12 @@ type Component<'event, 'state> =
         member this.dispatchEvent event =
             this.state <- this._class.update this (event.unboxed())
 
-and ComponentClass<'event, 'state> =
+and ComponentClass<'state, 'event> =
     { 
         getInitialState : unit -> 'state; 
         getDefaultProps : unit -> Properties;
-        update : Component<'event, 'state> -> Event<'event> -> 'state;
-        render: Component<'event, 'state> -> Element
+        update : Component<'state, 'event> -> Event<'event> -> 'state;
+        render: Component<'state, 'event> -> Element
     }
     member this.GetInitialState(initial) = { this with getInitialState = initial }
     member this.InitialState(initial) = { this with getInitialState = fun () -> initial }
@@ -73,19 +73,19 @@ and ComponentClass<'event, 'state> =
 
 type Define =
 
-    static member Component<'e, 's>() = 
+    static member Component<'s, 'e>() = 
         { 
             getInitialState = fun () -> Unchecked.defaultof<'s>
             getDefaultProps = fun () -> [];
-            update = fun (c:Component<'e, 's>) _ -> c.state;
-            render = fun (_:Component<'e, 's>) -> 
+            update = fun (c:Component<'s, 'e>) _ -> c.state;
+            render = fun (_:Component<'s, 'e>) -> 
                 failwith "render function not implemented";
         }
 
 module Core =
 
     let render c p = { kind = ElementKind.Component c; props = p; nested = [] }
-    let service name p nested = { kind = Native name; props = p; nested = nested }
+    let service name p nested = { kind = Service name; props = p; nested = nested }
 
 module Events =
     (* Event Handling *)

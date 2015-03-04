@@ -53,7 +53,7 @@ module ComponentDOM =
 
                 ComponentState c, [c.render()]
 
-            | Native name ->
+            | Service name ->
                 NativeState name, element.nested
 
         let mounted = 
@@ -79,7 +79,7 @@ module ComponentDOM =
             let nested = c.render()
             reconcileNested mounted [nested]
 
-        | NativeState ln, Native rn  when ln = rn ->
+        | NativeState ln, Service rn  when ln = rn ->
             let mounted = mounted.applyProps element.props
             let nested = element.nested
             reconcileNested mounted nested
