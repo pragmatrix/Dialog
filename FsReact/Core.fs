@@ -83,8 +83,7 @@ type Define =
         }
 
 module Core =
-    // Render a component
-    
+
     let render c p = { kind = ElementKind.Component c; props = p; nested = [] }
     let resource name p nested = { kind = Native name; props = p; nested = nested }
 
