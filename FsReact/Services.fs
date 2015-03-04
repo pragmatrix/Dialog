@@ -89,7 +89,7 @@ module Services =
             }
  
     let mkNestedServiceKey i (mounted : MountedElement) = 
-        match Props.tryGet (fun (Key k) -> k) mounted.props with
+        match Properties.tryGet (fun (Key k) -> k) mounted.properties with
         | Some k -> k
         | None -> i.ToString()
 
@@ -120,7 +120,7 @@ module Services =
                 let key = mkNestedServiceKey index mounted
                 let identity = ComponentDOM.mkIdentity name key
                 Trace.mountingService _identityString index (mkIdentityString identity)
-                let service = instantiateService identity (mounted.props |> Props.toProperties)
+                let service = instantiateService identity mounted.properties
                 service.updateNested mounted
                 _nestingAdapter.mount _instance index service.instance
                 service.mounted()
@@ -138,7 +138,7 @@ module Services =
             match mounted.state with
             | ServiceState name ->
                 if fst nested.identity = name then
-                    nested.update (mounted.props |> Props.toProperties)
+                    nested.update mounted.properties
                     nested.updateNested mounted
                     nested
                 else
@@ -202,7 +202,7 @@ module Services =
     let updateElementRoot root = 
         match root.state with
         | ComponentState c ->
-            let element = { Element.kind = Component c.class'; properties = root.props |> Props.toProperties; nested = [] }
+            let element = { Element.kind = Component c.class'; properties = root.properties; nested = [] }
             reconcile root element
 
         | _ -> failwith "a mounted element at root must be a component"
