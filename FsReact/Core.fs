@@ -31,6 +31,7 @@ and Component =
     abstract render : unit -> Element
     abstract dispatchEvent : Event<obj> -> unit
     abstract class' : ComponentClass
+    abstract properties : Properties
 
 and ComponentClass = 
     abstract createComponent : Properties -> Component
@@ -46,6 +47,7 @@ type Component<'state, 'event> =
         member this.render() = this.class'.render this
         member this.dispatchEvent event =
             this.state <- this.class'.update this (event.unboxed())
+        member this.properties = this.props |> Props.toProperties
 
 and ComponentClass<'state, 'event> =
     { 

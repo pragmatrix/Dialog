@@ -13,24 +13,26 @@ module ComponentDOM =
     let mkIdentity name key = (name, key)
 
     type MountedState = 
-        | ServiceState of string
+        | ServiceState of string * Properties
         | ComponentState of Component
 
     type MountedElement = 
         {
             key: string; 
-            properties: Properties;
             state: MountedState; 
             nested: Dict<string, MountedElement>;
             orderedKeys: string list;
         }
         with
         member this.updateProperties properties =
-            { this with properties = properties }
+            match this.state with
+            | ServiceState (name, _) ->
+                { this with state = ServiceState (name, properties) }
+            | _ -> this
 
         member this.identity =
             match this.state with
-            | ServiceState name -> mkIdentity name this.key
+            | ServiceState (name, _) -> mkIdentity name this.key
             | ComponentState _ -> mkIdentity "[component]" this.key
 
 
@@ -52,11 +54,10 @@ module ComponentDOM =
                 ComponentState c, [c.render()]
 
             | Service name ->
-                ServiceState name, element.nested
+                ServiceState (name, element.properties), element.nested
 
         let mounted = 
             {
-                properties = element.properties;
                 key = key;
                 state = state;
                 nested = Dict.ofList [];
@@ -77,7 +78,7 @@ module ComponentDOM =
             let nested = c.render()
             reconcileNested mounted [nested]
 
-        | ServiceState ln, Service rn  when ln = rn ->
+        | ServiceState (ln, _), Service rn  when ln = rn ->
             let mounted = mounted.updateProperties element.properties
             let nested = element.nested
             reconcileNested mounted nested

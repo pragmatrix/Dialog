@@ -11,6 +11,7 @@ type DummyComponent() =
         member this.render() = service "" [] []
         member this.dispatchEvent e = ()
         member this.class' = unbox null
+        member this.properties = []
 
 [<TestFixture>]
 type CoreTests() = 

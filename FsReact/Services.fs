@@ -89,9 +89,12 @@ module Services =
             }
  
     let mkNestedServiceKey i (mounted : MountedElement) = 
-        match Properties.tryGet (fun (Key k) -> k) mounted.properties with
-        | Some k -> k
-        | None -> i.ToString()
+        match mounted.state with
+        | ServiceState (_, properties) ->
+            match Properties.tryGet (fun (Key k) -> k) properties with
+            | Some k -> k
+            | None -> i.ToString()
+        | _ -> failwith "nested mounted elements must be a service to mount it to a parent service, please review your scanner"
 
     type Service<'service>
         (
@@ -116,11 +119,11 @@ module Services =
 
         member this.mountNested index mounted = 
             match mounted.state with
-            | ServiceState name ->
+            | ServiceState (name, properties) ->
                 let key = mkNestedServiceKey index mounted
                 let identity = ComponentDOM.mkIdentity name key
                 Trace.mountingService _identityString index (mkIdentityString identity)
-                let service = instantiateService identity mounted.properties
+                let service = instantiateService identity properties
                 service.updateNested mounted
                 _nestingAdapter.mount _instance index service.instance
                 service.mounted()
@@ -136,9 +139,9 @@ module Services =
 
         member this.updateNested index (nested : Service) mounted = 
             match mounted.state with
-            | ServiceState name ->
+            | ServiceState (name, properties) ->
                 if fst nested.identity = name then
-                    nested.update mounted.properties
+                    nested.update properties
                     nested.updateNested mounted
                     nested
                 else
@@ -202,7 +205,7 @@ module Services =
     let updateElementRoot root = 
         match root.state with
         | ComponentState c ->
-            let element = { Element.kind = Component c.class'; properties = root.properties; nested = [] }
+            let element = { Element.kind = Component c.class'; properties = c.properties; nested = [] }
             reconcile root element
 
         | _ -> failwith "a mounted element at root must be a component"
