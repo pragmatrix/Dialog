@@ -1,11 +1,33 @@
 ﻿namespace FsReact
 
+type Properties = obj list
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Properties =
+
+    let concat (a:Properties) b = a @ b
+
+    let tryGet (f: 'property -> 'value) (props: Properties) =
+        let rec tg (props : Properties) = 
+            match props with
+            | [] -> None
+            | x::xs ->
+            match x with
+            | :? 'property as p -> f p |> Some
+            | _ -> tg xs
+
+        tg props
+
+    let get (f: 'property -> 'value) (props: Properties) =
+        match tryGet f props with
+        | Some p -> p
+        | None ->         
+        failwithf "Property %A not found" (typedefof<'property>.Name)
+
 type Props = Map<string, obj>
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Props =
-
-    type Properties = obj list
 
     let empty : Props = Map.empty
 
@@ -19,8 +41,8 @@ module Props =
         newProps
         |> List.fold applyOne props
 
-    let ofList props = empty |> apply props
-    let toList (props : Props) = props |> Map.toSeq |> Seq.map snd |> Seq.toList
+    let ofProperties properties = empty |> apply properties
+    let toProperties (props : Props) = props |> Map.toSeq |> Seq.map snd |> Seq.toList
 
     let tryGet (f : 'property -> 'value) (props:Props) = 
         let key = typedefof<'property>.Name
@@ -37,22 +59,3 @@ module Props =
         match tryGet f props with
         | Some p -> p
         | None -> failwithf "Property %A not found" (typedefof<'property>.Name)
-
-    let concat (a:Properties) b = a @ b
-
-    let tryGetFromList (f: 'property -> 'value) (props: Properties) =
-        let rec tg (props : Properties) = 
-            match props with
-            | [] -> None
-            | x::xs ->
-            match x with
-            | :? 'property as p -> f p |> Some
-            | _ -> tg xs
-
-        tg props
-
-    let getFromList (f: 'property -> 'value) (props: Properties) =
-        match tryGetFromList f props with
-        | Some p -> p
-        | None ->         
-        failwithf "Property %A not found" (typedefof<'property>.Name)

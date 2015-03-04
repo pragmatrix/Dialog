@@ -2,8 +2,6 @@ namespace FsReact
 
 open System.Collections.Generic
 
-type Properties = obj list
-
 type Reference = 
     abstract get : ('property -> 'value) -> 'value
 
@@ -14,7 +12,7 @@ module ReferenceExtensions =
             {
                 new Reference with
                     member this.get decon = 
-                        Props.getFromList decon properties
+                        Properties.get decon properties
             }
 
         static member empty = Reference.withProperties []
@@ -27,32 +25,32 @@ type ElementKind =
     | Component of ComponentClass
     | Service of string
 
-and Element = { kind: ElementKind; props: Properties; nested: Element list }
+and Element = { kind: ElementKind; properties: Properties; nested: Element list }
 
 and Component =
     abstract render : unit -> Element
     abstract dispatchEvent : Event<obj> -> unit
-    abstract _class : ComponentClass
+    abstract class' : ComponentClass
 
 and ComponentClass = 
     abstract createComponent : Properties -> Component
 
 type Component<'state, 'event> =
     {
-        _class : ComponentClass<'state, 'event>
+        class' : ComponentClass<'state, 'event>
         props : Props;
         mutable state : 'state;
     } 
     interface Component with
-        member this._class = this._class :> _
-        member this.render() = this._class.render this
+        member this.class' = this.class' :> _
+        member this.render() = this.class'.render this
         member this.dispatchEvent event =
-            this.state <- this._class.update this (event.unboxed())
+            this.state <- this.class'.update this (event.unboxed())
 
 and ComponentClass<'state, 'event> =
     { 
         getInitialState : unit -> 'state; 
-        getDefaultProps : unit -> Properties;
+        getDefaultProperties : unit -> Properties;
         update : Component<'state, 'event> -> Event<'event> -> 'state;
         render: Component<'state, 'event> -> Element
     }
@@ -64,19 +62,19 @@ and ComponentClass<'state, 'event> =
     interface ComponentClass with
         member this.createComponent props =
             let state = this.getInitialState()
-            let defaultProps = this.getDefaultProps()
+            let defaultProperties = this.getDefaultProperties()
             let props = 
-                defaultProps
-                |> Props.ofList
+                defaultProperties
+                |> Props.ofProperties
                 |> Props.apply props
-            { _class = this; props = props; state = state } :> _
+            { class' = this; props = props; state = state } :> _
 
 type Define =
 
     static member Component<'s, 'e>() = 
         { 
             getInitialState = fun () -> Unchecked.defaultof<'s>
-            getDefaultProps = fun () -> [];
+            getDefaultProperties = fun () -> [];
             update = fun (c:Component<'s, 'e>) _ -> c.state;
             render = fun (_:Component<'s, 'e>) -> 
                 failwith "render function not implemented";
@@ -84,8 +82,8 @@ type Define =
 
 module Core =
 
-    let render c p = { kind = ElementKind.Component c; props = p; nested = [] }
-    let service name p nested = { kind = Service name; props = p; nested = nested }
+    let render c p = { kind = ElementKind.Component c; properties = p; nested = [] }
+    let service name p nested = { kind = Service name; properties = p; nested = nested }
 
 module Events =
     (* Event Handling *)

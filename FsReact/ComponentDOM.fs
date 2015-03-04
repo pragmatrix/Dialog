@@ -39,7 +39,7 @@ module ComponentDOM =
     let derivedKey key (i:int) = key + "." + (i |> string)
 
     let elementKey key i (element:Element) = 
-        match Props.tryGetFromList (function Key key -> key) element.props with
+        match Properties.tryGet (function Key key -> key) element.properties with
         | Some key -> key
         | None -> derivedKey key i
 
@@ -48,7 +48,7 @@ module ComponentDOM =
         let state, nested = 
             match element.kind with
             | Component c ->
-                let c = c.createComponent element.props
+                let c = c.createComponent element.properties
                 Trace.renderingComponent "" key
 
                 ComponentState c, [c.render()]
@@ -58,7 +58,7 @@ module ComponentDOM =
 
         let mounted = 
             {
-                props = element.props |> Props.ofList;
+                props = element.properties |> Props.ofProperties;
                 key = key;
                 state = state;
                 nested = Dict.ofList [];
@@ -73,14 +73,14 @@ module ComponentDOM =
 
     and reconcile (mounted: MountedElement) (element: Element) = 
         match mounted.state, element.kind with
-        | ComponentState c, Component eClass when obj.ReferenceEquals(c._class, eClass) ->
-            let mounted = mounted.applyProps element.props
+        | ComponentState c, Component eClass when obj.ReferenceEquals(c.class', eClass) ->
+            let mounted = mounted.applyProps element.properties
             Trace.renderingComponent "" mounted.key
             let nested = c.render()
             reconcileNested mounted [nested]
 
         | NativeState ln, Service rn  when ln = rn ->
-            let mounted = mounted.applyProps element.props
+            let mounted = mounted.applyProps element.properties
             let nested = element.nested
             reconcileNested mounted nested
 

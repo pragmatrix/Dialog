@@ -10,7 +10,7 @@ type DummyComponent() =
     interface Component with
         member this.render() = service "" [] []
         member this.dispatchEvent e = ()
-        member this._class = unbox null
+        member this.class' = unbox null
 
 [<TestFixture>]
 type CoreTests() = 

@@ -108,13 +108,13 @@ module UI =
 
     let render = Core.render
 
-    let button text event p = service "Button" (Props.concat [Text text; OnClick event] p) []
-    let imageButton source event p = service "Button" (Props.concat [Image source; OnClick event] p) []
+    let button text event p = service "Button" (Properties.concat [Text text; OnClick event] p) []
+    let imageButton source event p = service "Button" (Properties.concat [Image source; OnClick event] p) []
     let label text p = service "Label" (Text text :> obj :: p) []
     let image (source:Source) p = service "Image" (box source :: p) []
 
     let view nested p = service "View" p nested
-    let popover title dismissed nested p = service "Popover" (Props.concat [Title title; OnDismissed dismissed] p) nested
+    let popover title dismissed nested p = service "Popover" (Properties.concat [Title title; OnDismissed dismissed] p) nested
 
 
     let mountRoot = Services.mountRoot
