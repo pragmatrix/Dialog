@@ -24,7 +24,7 @@ type AppDelegate () =
         Tracer.set (fun (str:string) -> System.Console.WriteLine str)
     
         // can't make static initialization of F# modules work.       
-        registerResources()
+        registerServices()
 
 
         let currentTest = counter

@@ -1,6 +1,6 @@
 ﻿namespace FsReact
 
-module Resources =
+module Services =
 
     open FsReact
     open System
@@ -12,7 +12,7 @@ module Resources =
         // notified before all nested elements will unmount
         abstract unmounting : unit -> unit
 
-    type Resource =
+    type Service =
         inherit IDisposable
         abstract identity: Identity
         abstract update : Properties -> unit
@@ -23,11 +23,11 @@ module Resources =
         abstract unmounting : unit -> unit
 
 
-    (* Registration of resource constructors *)
+    (* Registration of service constructors *)
 
-    let mutable private registry = Map.empty<string, string * (Identity -> Properties -> Resource)>
+    let mutable private registry = Map.empty<string, string * (Identity -> Properties -> Service)>
     
-    let instantiateResource ((name, key) as identity) props =
+    let instantiateService ((name, key) as identity) props =
         let f = registry.[name] |> snd 
         f identity props
 
@@ -36,9 +36,9 @@ module Resources =
     let recursiveNativeTypeScanner typeTest = 
         ScanningStrategies.recursiveNativeNameScanner (typeOf >> typeTest)
 
-    (* Resource specification *)
+    (* Service specification *)
 
-    type ResourceClass<'instance> = { 
+    type ServiceClass<'instance> = { 
             constructor': unit -> 'instance; 
             destructor: 'instance -> unit; 
             propertyWriter: PropertyWriter<'instance>;
@@ -59,7 +59,7 @@ module Resources =
         member this.MountingNotifier notifier = { this with mountingNotifier = notifier }
 
     type Define with
-        static member ResourceClass() = 
+        static member Service() = 
 
             let notifyMounted i = 
                 match box i with
@@ -81,14 +81,14 @@ module Resources =
                 mountingNotifier = notifyMounted, notifyUnmounting
             }
  
-    let mkNestedResourceKey i (mounted : MountedElement) = 
+    let mkNestedServiceKey i (mounted : MountedElement) = 
         match Props.tryGet (fun (Key k) -> k) mounted.props with
         | Some k -> k
         | None -> i.ToString()
 
-    type Resource<'resource>
+    type Service<'service>
         (
-            class': ResourceClass<'resource>,
+            class': ServiceClass<'service>,
             identity: Identity
         ) =
 
@@ -98,59 +98,59 @@ module Resources =
         let _nestingAdapter = class'.nestingAdapter
         let _disposer = class'.destructor
 
-        let mutable _nested = Dict<string, Resource>()
+        let mutable _nested = Dict<string, Service>()
         
         let mkIdentityString identity = fst identity + ":" + snd identity
         let _identityString = fst identity + ":" + snd identity
 
-        let _propertyReconciler = PropertyReconciler<'resource>(_writer, _instance, _identityString)
+        let _propertyReconciler = PropertyReconciler<'service>(_writer, _instance, _identityString)
 
         member this.instance = _instance
 
         member this.mountNested index mounted = 
             match mounted.state with
             | NativeState name ->
-                let resourceKey = mkNestedResourceKey index mounted
-                let identity = ComponentDOM.mkIdentity name resourceKey
-                Trace.mountingResource _identityString index (mkIdentityString identity)
-                let resource = instantiateResource identity (mounted.props |> Props.toList)
-                resource.updateNested mounted
-                _nestingAdapter.mount _instance index resource.instance
-                resource.mounted()
-                resource
+                let key = mkNestedServiceKey index mounted
+                let identity = ComponentDOM.mkIdentity name key
+                Trace.mountingService _identityString index (mkIdentityString identity)
+                let service = instantiateService identity (mounted.props |> Props.toList)
+                service.updateNested mounted
+                _nestingAdapter.mount _instance index service.instance
+                service.mounted()
+                service
 
-            | _ -> failwith "internal error: can't create resources for non-native elements"
+            | _ -> failwith "internal error: can't create services for non-native elements, this might be caused by a defective scanner"
 
-        member this.unmountNested (resource:Resource) = 
-            resource.unmounting()
-            _nestingAdapter.unmount _instance resource.instance
-            Trace.unmountedResource _identityString (mkIdentityString resource.identity)
-            resource.Dispose()
+        member this.unmountNested (nested:Service) = 
+            nested.unmounting()
+            _nestingAdapter.unmount _instance nested.instance
+            Trace.unmountingService _identityString (mkIdentityString nested.identity)
+            nested.Dispose()
 
-        member this.updateNested index (resource : Resource) mounted = 
+        member this.updateNested index (nested : Service) mounted = 
             match mounted.state with
             | NativeState name ->
-                if fst resource.identity = name then
-                    resource.update (mounted.props |> Props.toList)
-                    resource.updateNested mounted
-                    resource
+                if fst nested.identity = name then
+                    nested.update (mounted.props |> Props.toList)
+                    nested.updateNested mounted
+                    nested
                 else
-                    this.unmountNested resource
+                    this.unmountNested nested
                     this.mountNested index mounted
 
-            | _ -> failwith "internal error: a resource can not be updated with a component"
+            | _ -> failwith "internal error: a services can not be updated with a component, this may be caused by scanner that returns components"
 
         member this.reconcileNested keyedMounts =
             let functions : Reconciler.Functions<_,_,_> = 
                 {
                     insert = fun i k v -> this.mountNested i v;
-                    update = fun i k resource v -> this.updateNested i resource v
-                    remove = fun k resource -> this.unmountNested resource
+                    update = fun i k service v -> this.updateNested i service v
+                    remove = fun k service -> this.unmountNested service
                 }
 
             _nested <- Reconciler.reconcile functions _nested keyedMounts
    
-        interface Resource with
+        interface Service with
             member __.identity = identity
             member __.instance = _instance :> obj
             member __.update props = _propertyReconciler.update props
@@ -167,30 +167,28 @@ module Resources =
                 let mounts = class'.scanner mounted
                 let keyedMounts = 
                     mounts 
-                    |> List.mapi (fun i m -> mkNestedResourceKey i m, m)
-                let this = this :> Resource<_>
+                    |> List.mapi (fun i m -> mkNestedServiceKey i m, m)
+                let this = this :> Service<_>
                 this.reconcileNested keyedMounts
                 class'.updateNotifier _instance
 
-    type ResourceClass<'instance> with
+    type ServiceClass<'instance> with
         member this.Instantiate identity initialProps = 
             let r = 
-                new Resource<_>(this, identity)
-            (r:>Resource).update initialProps
+                new Service<_>(this, identity)
+            (r:>Service).update initialProps
             r
 
-    (* Resource references *)
-
-    type ResourceReference<'target>(target: 'target, reader: PropertyReader<'target>) = 
+    type ServiceReference<'target>(target: 'target, reader: PropertyReader<'target>) = 
         interface Reference with
             override this.get deconstructor = reader.read target deconstructor
 
 
     module Registry =
 
-        let register (name:string) (type': string) (c: ResourceClass<_>) = 
+        let register (name:string) (type': string) (c: ServiceClass<_>) = 
             let f = c.Instantiate
-            let f i p = f i p :> Resource
+            let f i p = f i p :> Service
             registry <- registry.Add(name, (type', f))
 
 
@@ -206,33 +204,33 @@ module Resources =
 
     type MountedRoot_ = 
         { 
-            resources: Resource list;
+            services: Service list;
             mutable root: MountedElement 
         }
         with
         interface MountedRoot with
             member this.update() = 
                 this.root <- updateElementRoot this.root
-                this.resources 
+                this.services 
                 |> List.iter (fun r -> r.updateNested this.root)
 
-    let mountRoot (resources: Resource list) element = 
+    let mountRoot (services: Service list) element = 
         let mounted = mount rootKey element
-        resources
+        services
         |> List.iter (fun r -> r.updateNested mounted)
-        { resources = resources; root = mounted } :> MountedRoot
+        { services = services; root = mounted } :> MountedRoot
 
-    type SystemResource() =
+    type SystemService() =
         class end
 
 
-    let private systemResourceClassPrototype = 
-        Define.ResourceClass()
-            .Constructor(fun () -> SystemResource())
+    let private systemServicePrototype = 
+        Define.Service()
+            .Constructor(fun () -> SystemService())
 
     open ScanningStrategies
 
-    let createSystemResource (nestedRootTypes : string list) = 
+    let createSystemService (nestedRootTypes : string list) = 
 
         let inclusionTest t =
             let include' = 
@@ -242,7 +240,7 @@ module Resources =
 
         let scanner = recursiveNativeTypeScanner inclusionTest
 
-        systemResourceClassPrototype
+        systemServicePrototype
             .Scanner(scanner)
             .Instantiate
   

@@ -3,7 +3,7 @@
 open FsReact
 open FsReact.Core
 open FsReact.UI
-open FsReact.Resources
+open FsReact.Services
 
 open CoreGraphics
 open UIKit
@@ -116,7 +116,7 @@ module iOS =
     open PropertyAccessor
 
     let mkHandler handler = EventHandler handler
-    let mkEvent target msg reader = { message = msg; props = []; sender = ResourceReference(target, reader) }
+    let mkEvent target msg reader = { message = msg; props = []; sender = ServiceReference(target, reader) }
 
     let private convertAlign align = 
         match align with
@@ -183,7 +183,7 @@ module iOS =
         Control<_>(view, CSSNode())
     
     let controlClassPrototype() = 
-        Define.ResourceClass()
+        Define.Service()
             .Destructor(controlDisposer)
 
     let controlType = "Control"
@@ -395,14 +395,14 @@ module iOS =
         let unmounter (this: Popover) (nested: Control) =
             this.rootView.unmountControl (nested)
 
-        Define.ResourceClass()
+        Define.Service()
             .Constructor(constructor')
             .PropertyWriter(popoverWriter)
             .NestingAdapter(mounter, unmounter)
             .Scanner(nestedControlScanner)
             .UpdateNotifier(fun p -> p.updateLayout())
 
-    let registerResources() =
+    let registerServices() =
         Registry.register "Button" controlType createButton
         Registry.register "Text" controlType createLabel
         Registry.register "Image" controlType createImage
@@ -448,8 +448,8 @@ module iOS =
         let unmountView (view : UIRootView) (control:Control) = 
             view.clearView()
 
-        let viewResource = 
-            Define.ResourceClass()
+        let viewService = 
+            Define.Service()
                 .Constructor(constructor')
                 .NestingAdapter(mountView, unmountView)
                 .Scanner(nestedControlScanner)
@@ -458,9 +458,9 @@ module iOS =
                 .UpdateNotifier(fun rv -> rv.updateLayout())
                 .Instantiate ("rootView", "/") []
 
-        let systemResource = 
-            Resources.createSystemResource ["Controller"] ("system", "/") []
+        let systemService = 
+            Services.createSystemService ["Controller"] ("system", "/") []
 
-        let mounted = UI.mountRoot [viewResource; systemResource] element
+        let mounted = UI.mountRoot [viewService; systemService] element
         registerEventRoot mounted |> ignore
-        viewResource.instance :> UIView
+        viewService.instance :> UIView

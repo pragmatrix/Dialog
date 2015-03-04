@@ -51,7 +51,7 @@
     <Compile Include="ComponentDOM.fs" />
     <Compile Include="NestingAdapter.fs" />
     <Compile Include="ScanningStrategies.fs" />
-    <Compile Include="Resources.fs" />
+    <Compile Include="Services.fs" />
     <Compile Include="UI.fs" />
   </ItemGroup>
   <PropertyGroup>

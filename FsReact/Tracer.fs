@@ -18,35 +18,35 @@ module Trace =
         "rendering " + componentName + componentKey
         |> trace
     
-    let mountingProperty resourceKey propertyName property = 
-        sprintf "+ %s='%A' %s" propertyName property resourceKey
+    let mountingProperty key propertyName property = 
+        sprintf "+ %s='%A' %s" propertyName property key
         |> trace
 
-    let updatingProperty resourceKey propertyName property =
-        sprintf "* %s='%A' %s" propertyName property resourceKey
+    let updatingProperty key propertyName property =
+        sprintf "* %s='%A' %s" propertyName property key
         |> trace
 
-    let unmountedProperty resourceKey propertyName = 
-        sprintf "- %s %s" propertyName resourceKey
+    let unmountedProperty key propertyName = 
+        sprintf "- %s %s" propertyName key
         |> trace
 
-    let mountingResource ancestorKey index nestedKey =
+    let mountingService ancestorKey index nestedKey =
         sprintf "%s[%d] += %s" ancestorKey index nestedKey
         |> trace
         
-    let unmountedResource ancestorKey nestedKey = 
+    let unmountingService ancestorKey nestedKey = 
         sprintf "%s[?] -= %s" ancestorKey nestedKey 
         |> trace
 
 #else
 
 module Trace = 
-    let render componentName = ()
-    let mountProperty resourceKey propertyName value = ()
-    let unmountProperty resourceKey propertyName = ()
-    let updateProperty resourceKey propertyName value = ()
-    let mountNested ancestorKey nestedKey index = ()
-    let unmountNested ancestorKey nestedKey index = ()
+    let renderingComponent _ _ = ()
+    let mountingProperty _ _ _ = ()
+    let updatingProperty _ _ _ = ()
+    let unmountedProperty _ _  = ()
+    let mountingService _ _ _ = ()
+    let unmountingService _ _ = ()
 
 #endif
  

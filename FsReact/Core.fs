@@ -85,7 +85,7 @@ type Define =
 module Core =
 
     let render c p = { kind = ElementKind.Component c; props = p; nested = [] }
-    let resource name p nested = { kind = Native name; props = p; nested = nested }
+    let service name p nested = { kind = Native name; props = p; nested = nested }
 
 module Events =
     (* Event Handling *)

@@ -8,7 +8,7 @@ open FsReact.Core
 
 type DummyComponent() =
     interface Component with
-        member this.render() = resource "" [] []
+        member this.render() = service "" [] []
         member this.dispatchEvent e = ()
         member this._class = unbox null
 
