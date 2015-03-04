@@ -23,18 +23,14 @@ type AppDelegate () =
     override this.FinishedLaunching (app, options) =
         Tracer.set (fun (str:string) -> System.Console.WriteLine str)
     
-        // can't make static initialization of F# modules work.       
-        registerServices()
-
-
         let currentTest = counter
         let currentTest = replaceRoot
         let currentTest = replaceNested
         let currentTest = twoComponents
         let currentTest = nestedViewWithLayoutChange
-        let currentTest = popoverTest
         let currentTest = iconViewTest
         let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
+        let currentTest = popoverTest
         
         let createView() = renderAsView (render currentTest [])
         

@@ -402,14 +402,6 @@ module iOS =
             .Scanner(nestedControlScanner)
             .UpdateNotifier(fun p -> p.updateLayout())
 
-    let registerServices() =
-        Registry.register "Button" controlType createButton
-        Registry.register "Text" controlType createLabel
-        Registry.register "Image" controlType createImage
-        
-        Registry.register "View" controlType createView
-        Registry.register "Popover" "Controller" createPopover
-
     let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
         comp.dispatchEvent event
         root.update()
@@ -464,3 +456,10 @@ module iOS =
         let mounted = UI.mountRoot [viewService; systemService] element
         registerEventRoot mounted |> ignore
         viewService.instance :> UIView
+
+    Registry.register "Button" controlType createButton
+    Registry.register "Text" controlType createLabel
+    Registry.register "Image" controlType createImage
+        
+    Registry.register "View" controlType createView
+    Registry.register "Popover" "Controller" createPopover
