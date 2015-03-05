@@ -324,6 +324,37 @@ module iOS =
             .Constructor(constructor')
             .PropertyWriter(writer)
 
+    type ViewController() = 
+        let _css = new CSSNode()
+        let _rootView = new UICSSLayoutView(_css)
+        let _controller = new UIViewController()
+        
+        do
+            _controller.View <- _rootView
+
+        member this.updateLayout() =
+            let preferred = _rootView.calculatePreferredSize()
+            _controller.PreferredContentSize <- Convert.toSize preferred
+
+        with
+        member this.rootView = _rootView
+        member this.controller = _controller
+
+    let ControllerService =
+    
+        let constructor'() = new ViewController()
+
+        let mounter (this: ViewController) index (nested: Control) =
+            this.rootView.mountControl index (nested)
+        let unmounter (this: ViewController) (nested: Control) =
+            this.rootView.unmountControl (nested)
+
+        Define.Service()
+            .Constructor(constructor')
+            .NestingAdapter(mounter, unmounter)
+            .Scanner(nestedControlScanner)
+            .UpdateNotifier(fun p -> p.updateLayout())
+
     type Popover() = 
         let _css = new CSSNode()
         let _rootView = new UICSSLayoutView(_css)
@@ -336,7 +367,7 @@ module iOS =
 
         member this.updateLayout() =
             let preferred = _rootView.calculatePreferredSize()
-            _contained.PreferredContentSize <-Convert.toSize preferred
+            _contained.PreferredContentSize <- Convert.toSize preferred
 
         interface MountingNotifications with
             member this.mounted() = 
@@ -346,14 +377,8 @@ module iOS =
                 let refFrame = ref.get (function Frame f -> f)
                 let refView = ref.get (function IOSView v -> v)
 
-                let (minWidth, minHeight) = _rootView.calculatePreferredSize()
-
-                printfn "preferred size: %A" (minWidth, minHeight)
-
-                // let minWidth = Math.Max(320.0, minWidth)
-
-                _contained.PreferredContentSize <- CGSize(nfloat minWidth, nfloat minHeight)
-
+                let preferred = _rootView.calculatePreferredSize()
+                _contained.PreferredContentSize <- Convert.toSize preferred
                 let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
             
                 _controller.PresentFromRect (Convert.rect localFrame, refView, UIPopoverArrowDirection.Any, true)
@@ -365,27 +390,26 @@ module iOS =
         member this.rootView = _rootView
         member this.containedController = _contained
         member this.controller = _controller
-        
-    let popoverReader = 
-        readerFor<Popover>
-
-    let popoverWriter = 
-        writerFor<Popover>
-        |> writer -- fun this (Title t) -> this.containedController.Title <- t
-        |> mounter --
-            // this is probably a common pattern to abstract the lifetime of a property int
-            // an option type.
-            // also a property-mirror could be interesting, what about using attributes to specify properties?
-            fun this (Anchor a) -> 
-                this.anchor <- Some a
-                fun () -> 
-                this.anchor <- None
-        |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
-            
+                    
     let PopoverService =
-    
+
+        let popoverReader = 
+            readerFor<Popover>
+
+        let popoverWriter = 
+            writerFor<Popover>
+            |> writer -- fun this (Title t) -> this.containedController.Title <- t
+            |> mounter --
+                // this is probably a common pattern to abstract the lifetime of a property int
+                // an option type.
+                // also a property-mirror could be interesting, what about using attributes to specify properties?
+                fun this (Anchor a) -> 
+                    this.anchor <- Some a
+                    fun () -> 
+                    this.anchor <- None
+            |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
+
         let constructor'() = 
-            printf "Popover is constructing"
             new Popover()
 
         let mounter (this: Popover) index (nested: Control) =
@@ -454,6 +478,18 @@ module iOS =
         let mounted = UI.mountRoot [viewService; systemService] element
         registerEventRoot mounted |> ignore
         viewService.instance :> UIView
+
+    let renderAsViewController element = 
+
+        let controllerService = 
+            ControllerService.Instantiate ("rootController", "/") []
+
+        let systemService = 
+            Services.createSystemService ["Controller"] ("system", "/") []
+
+        let mounted = UI.mountRoot [controllerService; systemService] element
+        registerEventRoot mounted |> ignore
+        controllerService.instance.controller
 
     Registry.register "Button" controlType buttonService
     Registry.register "Label" controlType labelService
