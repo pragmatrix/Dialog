@@ -45,7 +45,7 @@ module Services =
     type ServiceClass<'instance> = { 
             constructor': unit -> 'instance; 
             destructor: 'instance -> unit; 
-            propertyWriter: PropertyWriter<'instance>;
+            propertyAccessor: PropertyAccessor<'instance>;
             nestingAdapter: NestingAdapter<'instance>;
             scanner: Scanner;
             updateNotifier: 'instance -> unit;
@@ -54,13 +54,13 @@ module Services =
         with 
         member this.Constructor c = { this with constructor' = c }
         member this.Destructor d = { this with destructor = d }
-        member this.Writer w = { this with propertyWriter = w }
+        member this.Writer w = { this with propertyAccessor = w }
         member this.NestingAdapter (mounter : 'instance -> int -> 'n -> unit, unmounter : 'instance-> 'n -> unit) =
             let mounter t i n = mounter t i (unbox n)
             let unmounter t n = unmounter t (unbox n)
             { this with nestingAdapter = { mount = mounter; unmount = unmounter }}
         member this.Scanner scanner = { this with scanner = scanner }
-        member this.PropertyWriter writer = { this with propertyWriter = writer }
+        member this.PropertyAccessor accessor = { this with propertyAccessor = accessor }
         member this.UpdateNotifier notifier = { this with updateNotifier = notifier }
         member this.MountingNotifier notifier = { this with mountingNotifier = notifier }
 
@@ -81,7 +81,7 @@ module Services =
             { 
                 constructor' = fun () -> failwith "not implemented"; 
                 destructor = fun _ -> (); 
-                propertyWriter = PropertyAccessor.writerFor; 
+                propertyAccessor = PropertyAccessor.accessorFor; 
                 nestingAdapter = NestingAdapter<_>.agnostic();
                 scanner = Scanners.dontScan;
                 updateNotifier = fun _ -> ();
@@ -104,7 +104,7 @@ module Services =
 
         let _class = class'
         let _instance = class'.constructor'()
-        let _writer = class'.propertyWriter
+        let _writer = class'.propertyAccessor
         let _nestingAdapter = class'.nestingAdapter
         let _disposer = class'.destructor
 
@@ -188,11 +188,6 @@ module Services =
                 new Service<_>(this, identity)
             (r:>Service).update initialProps
             r
-
-    type ServiceReference<'target>(target: 'target, reader: PropertyReader<'target>) = 
-        interface Reference with
-            override this.get deconstructor = reader.read target deconstructor
-
 
     module Registry =
 

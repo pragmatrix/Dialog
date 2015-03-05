@@ -4,6 +4,7 @@ open FsReact
 open FsReact.UI
 open FsReact.Services
 open FsReact.Scanners
+open FsReact.PropertyAccessor
 
 open CoreGraphics
 open UIKit
@@ -111,10 +112,8 @@ module iOS =
             base.updateCSS()
             view.updateCSS()
 
-    open PropertyAccessor
-
     let mkHandler handler = EventHandler handler
-    let mkEvent target msg reader = { message = msg; props = []; sender = Services.ServiceReference(target, reader) }
+    let mkEvent target msg reference = { message = msg; props = []; sender = reference }
 
     let private convertAlign align = 
         match align with
@@ -130,13 +129,12 @@ module iOS =
         setter(SpacingType.Right, spacing.right |> float32)
         setter(SpacingType.Bottom, spacing.bottom |> float32)
 
-    let controlReader = 
-        readerFor<Control>
+    let controlAccessor = 
+        accessorFor<Control>
+        |> reader --
+            fun this -> this.view.Frame |> Convert.rect |> Frame
         |> reader --
             fun this -> IOSView this.view
-
-    let controlWriter = 
-        writerFor<Control>
         |> defaultValue -- BackgroundColor Color.Transparent
         |> writer --
             fun this (BackgroundColor color) ->
@@ -164,12 +162,12 @@ module iOS =
             fun this (Height height) ->
                 this.css.StyleHeight <- height |> float32
 
-    let eventMounter reader f accessor = 
+    let eventMounter f accessor = 
         accessor
-        |> mounter --
-            fun this e ->
+        |> eventMounter --
+            fun this accessor e ->
                 let (comp, msg), (e:IEvent<_, _>) = f this e
-                let handler = mkHandler -- fun _ _ -> Events.dispatchEvent comp -- mkEvent this msg reader
+                let handler = mkHandler -- fun _ _ -> Events.dispatchEvent comp -- mkEvent this msg accessor
                 e.AddHandler handler
                 fun () -> e.RemoveHandler handler
 
@@ -205,7 +203,7 @@ module iOS =
             View(view, css)
 
         let viewAccessor = 
-            writerFor<View>.extend controlWriter
+            accessorFor<View>.extend controlAccessor
             |> defaultValue -- AlignItems Auto
             |> defaultValue -- JustifyContent.Start
             |> writer --
@@ -245,7 +243,7 @@ module iOS =
             .Constructor(constructor')
             .Scanner(nestedControlScanner)
             .NestingAdapter(mounter, unmounter)
-            .PropertyWriter(viewAccessor)
+            .PropertyAccessor(viewAccessor)
             .Destructor(controlDisposer)
         
     let loadImage source =
@@ -260,13 +258,8 @@ module iOS =
             control.useSizeThatFits()
             control
 
-        let buttonReader = 
-            readerFor<Control<UIButton>>.extend controlReader
-            |> reader --
-                fun this -> this.view.Frame |> Convert.rect |> Frame
-
         let buttonAccessor = 
-            writerFor<Control<UIButton>>.extend controlWriter
+            accessorFor<Control<UIButton>>.extend controlAccessor
             |> defaultValue -- Text ""
             |> writer --
                 fun this (Text t) ->
@@ -277,16 +270,16 @@ module iOS =
                     this.view.SetImage(loadImage i, UIControlState.Normal)
                     fun () -> this.view.SetImage(null, UIControlState.Normal)
 
-            |> eventMounter buttonReader -- fun this (OnClick e) -> e, this.view.TouchUpInside
+            |> eventMounter -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
         controlClassPrototype()
             .Constructor(constructor')
-            .PropertyWriter(buttonAccessor)
+            .PropertyAccessor(buttonAccessor)
 
     let labelService =
 
         let labelAccessor = 
-            writerFor<Control<UILabel>>.extend controlWriter
+            accessorFor<Control<UILabel>>.extend controlAccessor
             |> defaultValue -- Text ""
             |> writer -- fun this (Text t) -> this.view.Text <- t
 
@@ -298,12 +291,12 @@ module iOS =
 
         controlClassPrototype()
             .Constructor(constructor')
-            .PropertyWriter(labelAccessor)
+            .PropertyAccessor(labelAccessor)
 
     let imageService = 
 
-        let writer =
-            writerFor<Control<UIImageView>>.extend controlWriter
+        let accessor =
+            accessorFor<Control<UIImageView>>.extend controlAccessor
             |> mounter --
                 fun this (source:Source) ->
                     let image = 
@@ -322,7 +315,7 @@ module iOS =
 
         controlClassPrototype()
             .Constructor(constructor')
-            .PropertyWriter(writer)
+            .PropertyAccessor(accessor)
 
     type ViewController() = 
         let _css = new CSSNode()
@@ -393,11 +386,8 @@ module iOS =
                     
     let PopoverService =
 
-        let popoverReader = 
-            readerFor<Popover>
-
-        let popoverWriter = 
-            writerFor<Popover>
+        let popoverAccessor = 
+            accessorFor<Popover>
             |> writer -- fun this (Title t) -> this.containedController.Title <- t
             |> mounter --
                 // this is probably a common pattern to abstract the lifetime of a property int
@@ -407,7 +397,7 @@ module iOS =
                     this.anchor <- Some a
                     fun () -> 
                     this.anchor <- None
-            |> eventMounter popoverReader -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
+            |> eventMounter -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
 
         let constructor'() = 
             new Popover()
@@ -419,7 +409,7 @@ module iOS =
 
         Define.Service()
             .Constructor(constructor')
-            .PropertyWriter(popoverWriter)
+            .PropertyAccessor(popoverAccessor)
             .NestingAdapter(mounter, unmounter)
             .Scanner(nestedControlScanner)
             .UpdateNotifier(fun p -> p.updateLayout())
