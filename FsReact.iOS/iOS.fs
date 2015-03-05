@@ -246,9 +246,13 @@ module iOS =
             .PropertyAccessor(viewAccessor)
             .Destructor(controlDisposer)
         
-    let loadImage source =
+    let private loadImage source =
         match source with
-        | Resource name -> UIImage.FromBundle(name) 
+        | Resource name -> 
+            let img = UIImage.FromBundle(name) 
+            match img with
+            | null -> failwithf "failed to load image %A from bundle" source
+            | _ -> img
 
     let buttonService = 
 
@@ -266,8 +270,8 @@ module iOS =
                     UIView.PerformWithoutAnimation
                         (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
             |> mounter --
-                fun this (Image i) ->
-                    this.view.SetImage(loadImage i, UIControlState.Normal)
+                fun this (Image source) ->
+                    this.view.SetImage(loadImage source, UIControlState.Normal)
                     fun () -> this.view.SetImage(null, UIControlState.Normal)
 
             |> eventMounter -- fun this (OnClick e) -> e, this.view.TouchUpInside
@@ -299,11 +303,7 @@ module iOS =
             accessorFor<Control<UIImageView>>.extend controlAccessor
             |> mounter --
                 fun this (source:Source) ->
-                    let image = 
-                        match source with
-                        | Resource name -> UIImage.FromBundle(name)
-
-                    this.view.Image <- image
+                    this.view.Image <- loadImage source
                     fun () ->
                         this.view.Image <- null
 
