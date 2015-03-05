@@ -40,6 +40,9 @@ module Trace =
 
 #else
 
+module Tracer = 
+    let set t = ()
+
 module Trace = 
     let renderingComponent _ _ = ()
     let mountingProperty _ _ _ = ()
