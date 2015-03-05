@@ -44,8 +44,8 @@ let iconViewTest =
 
         view [
             view [
-                render iconView [Content content1; Image (Resource "Download From Cloud-100.png"); OnClick(this, Clicked1 |> box)]
-                render iconView [Content content2; Image (Resource "Download From Cloud-100.png"); OnClick(this, Clicked2 |> box)]
+                render iconView [Content content1; Image (Resource "Download From Cloud-100.png"); OnClick(this, Clicked1)]
+                render iconView [Content content2; Image (Resource "Download From Cloud-100.png"); OnClick(this, Clicked2)]
             ] [Width 300.]
 
         ] [BackgroundColor Color.White; JustifyContent.Center; AlignItems.Start]

@@ -11,8 +11,12 @@ module UI =
     type Image = Image of Source
 
     type Title = Title of string
+
     type OnClick = OnClick of (Component * obj)
+    let OnClick (c, e) = OnClick (c, box e)
+
     type OnDismissed = OnDismissed of (Component * obj)
+    let OnDismissed (c, e) = OnDismissed (c, box e)
 
     type Rect = { left: float; top: float; width: float; height: float }
         with
