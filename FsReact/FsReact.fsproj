@@ -9,7 +9,7 @@
     <RootNamespace>FsReact</RootNamespace>
     <AssemblyName>FsReact</AssemblyName>
     <TargetProfile>netcore</TargetProfile>
-    <TargetFSharpCoreVersion>3.78.3.1</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.259.3.1</TargetFSharpCoreVersion>
     <Name>FsReact</Name>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
