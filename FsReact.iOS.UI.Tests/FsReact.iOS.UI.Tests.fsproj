@@ -10,7 +10,7 @@
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>FsReactiOSUITests</AssemblyName>
     <Name>FsReact.iOS.UI.Tests</Name>
-    <SelectedDevice>iPad Retina iOS 8.1</SelectedDevice>
+    <SelectedDevice>iPad 2 iOS 8.2</SelectedDevice>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>

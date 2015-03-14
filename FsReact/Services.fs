@@ -196,26 +196,18 @@ module Services =
             let f i p = f i p :> Service
             registry <- registry.Add(name, (type', f))
 
-
-    let updateElementRoot root = 
-        match root.state with
-        | ComponentState c ->
-            let element = { Element.kind = Component c.class'; properties = c.properties; nested = [] }
-            reconcile root element
-
-        | _ -> failwith "a mounted element at root must be a component"
-
     let rootKey = "/"
 
     type MountedRoot_ = 
         { 
             services: Service list;
+            rootElement: Element;
             mutable root: MountedElement 
         }
         with
         interface MountedRoot with
             member this.update() = 
-                this.root <- updateElementRoot this.root
+                this.root <- reconcile this.root this.rootElement
                 this.services 
                 |> List.iter (fun r -> r.updateNested this.root)
 
@@ -223,7 +215,7 @@ module Services =
         let mounted = mount rootKey element
         services
         |> List.iter (fun r -> r.updateNested mounted)
-        { services = services; root = mounted } :> MountedRoot
+        { services = services; rootElement = element; root = mounted } :> MountedRoot
 
     type SystemService() =
         class end
