@@ -181,8 +181,6 @@ module iOS =
     let controlClassPrototype() = 
         Define.Service()
             .Destructor(controlDisposer)
-
-    let controlType = "Control"
     
     let nestedControlScanner = 
 
@@ -463,7 +461,7 @@ module iOS =
                 .Instantiate ("rootView", "/") []
 
         let systemService = 
-            Services.createSystemService ["Controller"] ("system", "/") []
+            Services.createSystemService [controllerType] ("system", "/") []
 
         let mounted = UI.mountRoot [viewService; systemService] element
         registerEventRoot mounted |> ignore
@@ -475,15 +473,14 @@ module iOS =
             ControllerService.Instantiate ("rootController", "/") []
 
         let systemService = 
-            Services.createSystemService ["Controller"] ("system", "/") []
+            Services.createSystemService [controllerType] ("system", "/") []
 
         let mounted = UI.mountRoot [controllerService; systemService] element
         registerEventRoot mounted |> ignore
         controllerService.instance.controller
 
-    Registry.register "Button" controlType buttonService
-    Registry.register "Label" controlType labelService
-    Registry.register "Image" controlType imageService
-        
-    Registry.register "View" controlType viewService
-    Registry.register "Popover" "Controller" popoverService
+    UI.buttonService.register buttonService.Instantiate
+    UI.labelService.register labelService.Instantiate
+    UI.imageService.register imageService.Instantiate
+    UI.viewService.register viewService.Instantiate
+    UI.popoverService.register popoverService.Instantiate

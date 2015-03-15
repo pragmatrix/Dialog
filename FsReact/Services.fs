@@ -23,15 +23,7 @@ module Services =
         abstract mounted : unit -> unit
         abstract unmounting : unit -> unit
 
-    (* Registration of Services *)
-
-    let mutable private registry = Map.empty<string, string * (Identity -> Properties -> Service)>
-    
-    let instantiateService ((name, key) as identity) props =
-        let f = registry.[name] |> snd 
-        f identity props
-
-    let typeOf name = registry.[name] |> fst
+    let typeOf serviceRef = serviceRef.serviceType
 
     let recursiveNativeTypeScanner typeTest = 
         Scanners.recursiveNativeNameScanner (typeOf >> typeTest)
@@ -119,11 +111,11 @@ module Services =
 
         member this.mountNested index mounted = 
             match mounted.state with
-            | ServiceState (name, properties) ->
+            | ServiceState (serviceRef, properties) ->
                 let key = mkNestedServiceKey index mounted
-                let identity = ComponentDOM.mkIdentity name key
+                let identity = ComponentDOM.mkIdentity serviceRef.name key
                 Trace.mountingService _identityString index (mkIdentityString identity)
-                let service = instantiateService identity properties
+                let service : Service = serviceRef.instantiate.Value identity properties |> unbox
                 service.updateNested mounted
                 _nestingAdapter.mount _instance index service.instance
                 service.mounted()
@@ -139,8 +131,8 @@ module Services =
 
         member this.updateNested index (nested : Service) mounted = 
             match mounted.state with
-            | ServiceState (name, properties) ->
-                if fst nested.identity = name then
+            | ServiceState (serviceRef, properties) ->
+                if fst nested.identity = serviceRef.name then
                     nested.update properties
                     nested.updateNested mounted
                     nested
@@ -189,13 +181,6 @@ module Services =
             (r:>Service).update initialProps
             r
 
-    module Registry =
-
-        let register (name:string) (type': string) (c: ServiceClass<_>) = 
-            let f = c.Instantiate
-            let f i p = f i p :> Service
-            registry <- registry.Add(name, (type', f))
-
     let rootKey = "/"
 
     type MountedRoot_ = 
@@ -225,7 +210,7 @@ module Services =
         Define.Service()
             .Constructor(fun () -> SystemService())
 
-    let createSystemService (nestedRootTypes : string list) = 
+    let createSystemService (nestedRootTypes : ServiceType list) = 
 
         let inclusionTest t =
             let include' = 

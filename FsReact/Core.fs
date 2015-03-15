@@ -6,9 +6,21 @@ type Event<'event> = { message: 'event; props: Properties; sender: Reference }
     with 
     member this.unboxed() = { message = this.message |> unbox; props = this.props; sender = this.sender }
 
+type Identity = string * string 
+
+type ServiceType = 
+    { typeName: string }
+
+type ServiceRef =
+    { name: string; serviceType: ServiceType; mutable instantiate: (Identity -> Properties -> obj) option }
+    member this.register instantiate =
+        assert(this.instantiate.IsNone)
+        let i = fun i p -> instantiate i p |> box
+        this.instantiate <- Some i
+
 type ElementKind = 
     | Component of ComponentClass
-    | Service of string
+    | Service of ServiceRef
 
 and Element = { kind: ElementKind; properties: Properties; nested: Element list }
 
@@ -66,6 +78,12 @@ type Define =
             render = fun (_:Component<'s, 'e>) -> 
                 failwith "render function not implemented";
         }
+
+    static member ServiceType(name: string) = 
+        { typeName = name }
+
+    static member ServiceRef(name: string, serviceType: ServiceType) = 
+        { name = name; serviceType = serviceType; instantiate = None }
 
 module Core =
 

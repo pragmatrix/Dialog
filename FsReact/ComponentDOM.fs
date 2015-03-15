@@ -9,11 +9,10 @@ module ComponentDOM =
 
     open Reconciler
 
-    type Identity = string * string 
     let mkIdentity name key = (name, key)
 
     type MountedState = 
-        | ServiceState of string * Properties
+        | ServiceState of ServiceRef * Properties
         | ComponentState of Component
 
     type MountedElement = 
@@ -32,7 +31,7 @@ module ComponentDOM =
 
         member this.identity =
             match this.state with
-            | ServiceState (name, _) -> mkIdentity name this.key
+            | ServiceState (serviceRef, _) -> mkIdentity serviceRef.name this.key
             | ComponentState _ -> mkIdentity "[component]" this.key
 
 
@@ -78,7 +77,7 @@ module ComponentDOM =
             let nested = c.render()
             reconcileNested mounted [nested]
 
-        | ServiceState (ln, _), Service rn  when ln = rn ->
+        | ServiceState (serviceRef, _), Service serviceRef' when obj.ReferenceEquals(serviceRef, serviceRef') ->
             let mounted = mounted.updateProperties element.properties
             let nested = element.nested
             reconcileNested mounted nested
