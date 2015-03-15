@@ -384,7 +384,7 @@ module iOS =
         member this.containedController = _contained
         member this.controller = _controller
                     
-    let PopoverService =
+    let popoverService =
 
         let popoverAccessor = 
             accessorFor<Popover>
@@ -486,4 +486,4 @@ module iOS =
     Registry.register "Image" controlType imageService
         
     Registry.register "View" controlType viewService
-    Registry.register "Popover" "Controller" PopoverService
+    Registry.register "Popover" "Controller" popoverService
