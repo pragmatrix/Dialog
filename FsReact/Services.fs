@@ -92,7 +92,7 @@ module Services =
         (
             class': ServiceClass<'service>,
             identity: Identity
-        ) =
+        ) as this =
 
         let _class = class'
         let _instance = class'.constructor'()
@@ -106,6 +106,13 @@ module Services =
         let _identityString = fst identity + ":" + snd identity
 
         let _propertyReconciler = PropertyReconciler<'service>(_writer, _instance, _identityString)
+
+        let _reconcilerFunctions : Reconciler.Functions<_,_,_> = 
+            {
+                insert = fun i _ -> this.mountNested i
+                update = fun i _ -> this.updateNested i
+                remove = fun _ -> this.unmountNested
+            }
 
         member this.instance = _instance
 
@@ -143,14 +150,7 @@ module Services =
             | _ -> failwith "internal error: a services can not be updated with a component, this may be caused by scanner that returns components"
 
         member this.reconcileNested keyedMounts =
-            let functions : Reconciler.Functions<_,_,_> = 
-                {
-                    insert = fun i k v -> this.mountNested i v;
-                    update = fun i k service v -> this.updateNested i service v
-                    remove = fun k service -> this.unmountNested service
-                }
-
-            _nested <- Reconciler.reconcile functions _nested keyedMounts
+            _nested <- Reconciler.reconcile _reconcilerFunctions _nested keyedMounts
    
         interface Service with
             member __.identity = identity
