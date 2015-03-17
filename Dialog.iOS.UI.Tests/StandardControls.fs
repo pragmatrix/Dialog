@@ -18,7 +18,7 @@ let presenterComponent =
         let l = props.get(function Label l -> l)
 
         view [
-            label (l+":") []
+            label (l+":") [Margin (Spacing.Left 16.)]
             content
         ] [LayoutDirection.Row; AlignSelf.Stretch; JustifyContent.SpaceBetween]
 
@@ -27,7 +27,7 @@ let presenterComponent =
         .Render(render)
 
 let present label content = render presenterComponent [Label label; Content content]
-let group l = label l [AlignSelf.Center; TextColor Color.Red]
+let group l = label l [AlignSelf.Start; FontSize 20.; TextColor Color.Red]
 
 let standardControls = 
 

@@ -74,6 +74,8 @@ module UI =
     type BackgroundColor = BackgroundColor of Color
     type TextColor = TextColor of Color
 
+    type FontSize = FontSize of float
+
     [<AutoOpen>]
     module Layout = 
 

@@ -288,6 +288,7 @@ module iOS =
             |> writer -- fun this (Text t) -> this.view.Text <- t
             |> defaultValue -- TextColor Color.Black
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
+            |> writer -- fun this (FontSize s) -> this.view.Font <- UIFont.FromName(this.view.Font.Name, nfloat s)
 
         let constructor'() = 
             let label = new UILabel()
