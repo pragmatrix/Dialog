@@ -10,6 +10,7 @@ open FsReact.Core
 open LayoutTests
 open PopoverTests
 open ComponentTests
+open StandardControls
 
 [<Register ("AppDelegate")>]
 type AppDelegate () =
@@ -31,6 +32,7 @@ type AppDelegate () =
         let currentTest = iconViewTest
         let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
         let currentTest = popoverTest
+        let currentTest = standardControls
         
         let createView() = renderAsView (render currentTest [])
         

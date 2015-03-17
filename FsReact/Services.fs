@@ -147,7 +147,7 @@ module Services =
                     this.unmountNested nested
                     this.mountNested index mounted
 
-            | _ -> failwith "internal error: a services can not be updated with a component, this may be caused by scanner that returns components"
+            | _ -> failwith "internal error: a service can not be updated with a component, this may be caused by scanner that returns components"
 
         member this.reconcileNested keyedMounts =
             _nested <- Reconciler.reconcile _reconcilerFunctions _nested keyedMounts
