@@ -27,7 +27,7 @@ let presenterComponent =
         .Render(render)
 
 let present label content = render presenterComponent [Label label; Content content]
-let group l = label l [AlignSelf.Stretch; BackgroundColor Color.Black; TextColor Color.White]
+let group l = label l [AlignSelf.Center; TextColor Color.Red]
 
 let standardControls = 
 

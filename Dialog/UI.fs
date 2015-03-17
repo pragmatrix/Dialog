@@ -2,6 +2,7 @@
 
 module UI =
 
+    open System
     open Core
 
     type Source = 
@@ -31,6 +32,44 @@ module UI =
         static member White = { red = 1.0; green = 1.0; blue = 1.0; alpha = 1.0 }
         static member Black = { red = 0.0; green = 0.0; blue = 0.0; alpha = 1.0 }
         static member Transparent = { red = 0.0; green = 0.0; blue = 0.0; alpha = 0.0 }
+
+        // http://www.procato.com/rgb+index/
+
+        static member Red = Color.fromHSV(0., 0.75, 1.)
+        static member Orange = Color.fromHSV(30., 0.75, 1.)
+        static member Yellow = Color.fromHSV(60., 0.75, 1.)
+        static member ChartreuseGreen = Color.fromHSV(90., 0.75, 1.)
+        static member Green = Color.fromHSV(120., 0.75, 1.)
+        static member SpringGreen = Color.fromHSV(150., 0.75, 1.)
+        static member Cyan = Color.fromHSV(180., 0.75, 1.)
+        static member Azure = Color.fromHSV(210., 0.75, 1.)
+        static member Blue = Color.fromHSV(240., 0.75, 1.)
+        static member Violet = Color.fromHSV(270., 0.75, 1.)
+        static member Magenta = Color.fromHSV(300., 0.75, 1.)
+        static member Rose = Color.fromHSV(330., 0.75, 1.)
+
+        // http://stackoverflow.com/questions/359612/how-to-change-rgb-color-to-hsv
+
+        static member fromHSV(hue: float, saturation: float, value: float) = 
+            let hi = Convert.ToInt32(Math.Floor(hue / 60.)) % 6
+            let f = hue / 60. - Math.Floor(hue / 60.)
+
+            let value = value * 255.
+            let v = value;
+            let p = value * (1. - saturation)
+            let q = value * (1. - f * saturation)
+            let t = value * (1. - (1. - f) * saturation)
+
+            let toB r g b = { red = r / 255.; green = g / 255.; blue = b / 255.; alpha = 1.0 }
+
+            match hi with
+            | 0 -> toB v t p
+            | 1 -> toB q v p
+            | 2 -> toB p v t
+            | 3 -> toB p q v
+            | 4 -> toB t p v
+            | _ -> toB v p q
+            
 
     type BackgroundColor = BackgroundColor of Color
     type TextColor = TextColor of Color
