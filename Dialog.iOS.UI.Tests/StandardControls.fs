@@ -37,20 +37,23 @@ let standardControls =
 
     let render this = 
         let imageSource = Resource "cloud-download.png"
-        let label = label "Label" []
-        let image = image imageSource [Width 30.; Height 30.]
+
         let button = button "Button" (this, Event) []
         let imageButton = imageButton imageSource (this, Event) [Width 30.; Height 30.]
+        let switch = switch On (this, Event) []
 
+        let label = label "Label" []
+        let image = image imageSource [Width 30.; Height 30.]
 
         view [
             view [
                 group "passive"
                 present "label" label
                 present "image" image
-                group "buttons"
+                group "controls"
                 present "button" button
                 present "imageButton" imageButton
+                present "switch" switch
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center]
 

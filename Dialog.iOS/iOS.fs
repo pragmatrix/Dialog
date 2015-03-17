@@ -134,9 +134,9 @@ module iOS =
 
     let controlProperties (get: 'a -> UIControl) accessor =
         accessor
-        |> defaultValue -- Enabled true
+        |> defaultValue -- Enabled
         |> writer --
-            fun this (Enabled e) -> (get this).Enabled <- e
+            fun this (e:Switch) -> (get this).Enabled <- e.Boolean
 
     let fontProperties (get: 'a -> UIFont) (set: 'a -> UIFont -> unit) accessor = 
         accessor
@@ -295,6 +295,24 @@ module iOS =
         controlClassPrototype()
             .Constructor(constructor')
             .PropertyAccessor(buttonAccessor)
+
+    let switchService = 
+        let construct() =
+            let switch = new UISwitch()
+            let control = createControl switch
+            control.useSizeThatFits()
+            control
+
+        let switchAccessor = 
+            accessorFor<Control<UISwitch>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+            |> reader -- fun this -> Switch.fromBoolean this.view.On
+            |> writer -- fun this (sw:Switch) -> this.view.On <- sw.Boolean
+            |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(switchAccessor)
 
     let labelService =
 
@@ -501,7 +519,10 @@ module iOS =
         controllerService.instance.controller
 
     UI.buttonService.register buttonService.Instantiate
+    UI.switchService.register switchService.Instantiate
+
     UI.labelService.register labelService.Instantiate
     UI.imageService.register imageService.Instantiate
+
     UI.viewService.register viewService.Instantiate
     UI.popoverService.register popoverService.Instantiate

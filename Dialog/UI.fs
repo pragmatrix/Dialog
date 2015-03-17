@@ -13,10 +13,29 @@ module UI =
 
     type Title = Title of string
 
-    type Enabled = Enabled of bool
+    type Activation = Enabled | Disabled
+        with
+        member this.Boolean =
+            match this with
+            | Enabled -> true
+            | Disabled -> false
+        static member fromBoolean b = 
+            if b then Enabled else Disabled
+
+    type Switch = On | Off
+        with
+        member this.Boolean = 
+            match this with
+            | On -> true
+            | Off -> false
+        static member fromBoolean b = 
+            if b then On else Off
 
     type OnClick = OnClick of (Component * obj)
     let OnClick (c, e) = OnClick (c, box e)
+
+    type OnChanged = OnChanged of (Component * obj)
+    let OnChanged (c, e) = OnChanged (c, box e)
 
     type OnDismissed = OnDismissed of (Component * obj)
     let OnDismissed (c, e) = OnDismissed (c, box e)
@@ -160,15 +179,20 @@ module UI =
     let controllerType = Define.ServiceType("Controller")
 
     let buttonService = Define.ServiceRef("Button", controlType)
+    let switchService = Define.ServiceRef("Switch", controlType)
+
     let labelService = Define.ServiceRef("Label", controlType)
     let imageService = Define.ServiceRef("Image", controlType)
+
     let viewService = Define.ServiceRef("View", controlType)
     let popoverService = Define.ServiceRef("Popover", controllerType)
 
-    let button text event p = service buttonService (Properties.concat [Text text; OnClick event] p) []
-    let imageButton source event p = service buttonService (Properties.concat [Image source; OnClick event] p) []
     let label text p = service labelService (Text text :> obj :: p) []
     let image (source:Source) p = service imageService (box source :: p) []
+
+    let button text event p = service buttonService (Properties.concat [Text text; OnClick event] p) []
+    let imageButton source event p = service buttonService (Properties.concat [Image source; OnClick event] p) []
+    let switch sw event p = service switchService (Properties.concat [sw; OnChanged event] p) []
 
     let view nested p = service viewService p nested
     let popover title dismissed nested p = service popoverService (Properties.concat [Title title; OnDismissed dismissed] p) nested
