@@ -131,6 +131,19 @@ module iOS =
         setter(SpacingType.Right, spacing.right |> float32)
         setter(SpacingType.Bottom, spacing.bottom |> float32)
 
+
+    let controlProperties (get: 'a -> UIControl) accessor =
+        accessor
+        |> defaultValue -- Enabled true
+        |> writer --
+            fun this (Enabled e) -> (get this).Enabled <- e
+
+    let fontProperties (get: 'a -> UIFont) (set: 'a -> UIFont -> unit) accessor = 
+        accessor
+        |> reader -- fun this -> (get this).PointSize
+        |> writer -- fun this (FontSize s) -> set this ((get this).WithSize(nfloat s))
+
+
     let controlAccessor = 
         accessorFor<Control>
         |> reader --
@@ -264,12 +277,13 @@ module iOS =
 
         let buttonAccessor = 
             accessorFor<Control<UIButton>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+            |> fontProperties (fun c -> c.view.Font) (fun c f -> c.view.Font <- f)
             |> defaultValue -- Text ""
             |> writer --
                 fun this (Text t) ->
                     UIView.PerformWithoutAnimation
                         (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
-            |> writer -- fun this (FontSize s) -> this.view.Font <- UIFont.FromName(this.view.Font.Name, nfloat s)
 
             |> mounter --
                 fun this (Image source) ->
@@ -286,11 +300,11 @@ module iOS =
 
         let labelAccessor = 
             accessorFor<Control<UILabel>>.extend controlAccessor
+            |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
             |> defaultValue -- Text ""
             |> writer -- fun this (Text t) -> this.view.Text <- t
             |> defaultValue -- TextColor Color.Black
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
-            |> writer -- fun this (FontSize s) -> this.view.Font <- UIFont.FromName(this.view.Font.Name, nfloat s)
 
         let constructor'() = 
             let label = new UILabel()
@@ -338,7 +352,7 @@ module iOS =
         member this.rootView = _rootView
         member this.controller = _controller
 
-    let ControllerService =
+    let controllerService =
     
         let constructor'() = new ViewController()
 
@@ -477,7 +491,7 @@ module iOS =
     let renderAsViewController element = 
 
         let controllerService = 
-            ControllerService.Instantiate ("rootController", "/") []
+            controllerService.Instantiate ("rootController", "/") []
 
         let systemService = 
             Services.createSystemService [controllerType] ("system", "/") []

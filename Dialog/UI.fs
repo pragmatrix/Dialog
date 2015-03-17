@@ -13,6 +13,8 @@ module UI =
 
     type Title = Title of string
 
+    type Enabled = Enabled of bool
+
     type OnClick = OnClick of (Component * obj)
     let OnClick (c, e) = OnClick (c, box e)
 
