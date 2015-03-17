@@ -269,6 +269,8 @@ module iOS =
                 fun this (Text t) ->
                     UIView.PerformWithoutAnimation
                         (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
+            |> writer -- fun this (FontSize s) -> this.view.Font <- UIFont.FromName(this.view.Font.Name, nfloat s)
+
             |> mounter --
                 fun this (Image source) ->
                     this.view.SetImage(loadImage source, UIControlState.Normal)
