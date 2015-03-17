@@ -132,7 +132,7 @@
     <Compile Include="PopoverTests.fs" />
     <Compile Include="StandardControls.fs" />
     <Compile Include="AppDelegate.fs" />
-    <Content Include="Download From Cloud-100.png" />
+    <Content Include="cloud-download.png" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

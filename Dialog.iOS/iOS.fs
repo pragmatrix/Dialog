@@ -25,6 +25,8 @@ module iOS =
             CGRect(nf r.left, nf r.top, nf r.width, nf r.height)
         static member toSize (width:float, height:float) =
             CGSize(nf width, nf height)
+        static member color color = 
+            new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
  
     type IOSView = IOSView of UIView
 
@@ -138,8 +140,8 @@ module iOS =
         |> defaultValue -- BackgroundColor Color.Transparent
         |> writer --
             fun this (BackgroundColor color) ->
-                this.view.BackgroundColor <- new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
-
+                this.view.BackgroundColor <- Convert.color color
+                
         |> writer --
             fun this (AlignSelf align) ->
                 this.css.AlignSelf <- convertAlign align
@@ -284,6 +286,8 @@ module iOS =
             accessorFor<Control<UILabel>>.extend controlAccessor
             |> defaultValue -- Text ""
             |> writer -- fun this (Text t) -> this.view.Text <- t
+            |> defaultValue -- TextColor Color.Black
+            |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
 
         let constructor'() = 
             let label = new UILabel()

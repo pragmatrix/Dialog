@@ -33,6 +33,7 @@ module UI =
         static member Transparent = { red = 0.0; green = 0.0; blue = 0.0; alpha = 0.0 }
 
     type BackgroundColor = BackgroundColor of Color
+    type TextColor = TextColor of Color
 
     [<AutoOpen>]
     module Layout = 

@@ -43,8 +43,8 @@ let popoverTest =
                 yield button ("Test Autosize "+state.count.ToString()) (this, AddText) []
 
                 // Icon by icons8.com
-                yield image (Resource "Download From Cloud-100.png") [Width 30.; Height 30.]
-                yield imageButton (Resource "Download From Cloud-100.png") (this, AddText) [Width 30.; Height 30.]
+                yield image (Resource "cloud-download.png") [Width 30.; Height 30.]
+                yield imageButton (Resource "cloud-download.png") (this, AddText) [Width 30.; Height 30.]
                 yield view [] [BackgroundColor Color.Black; AlignSelf.Stretch; Height 1.]
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
