@@ -16,6 +16,7 @@ open StandardControls
 type AppDelegate () =
     inherit UIApplicationDelegate ()
 
+
     // window must be created in FinishedLaunching, otherwise MainScreen.Bounds are wrong, which results
     // in a rotation problem, when we start in landscape mode.
 

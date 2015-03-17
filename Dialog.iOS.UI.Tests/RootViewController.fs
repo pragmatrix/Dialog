@@ -24,3 +24,5 @@ type RootViewController (viewLoader: unit -> UIView) =
     // Return true for supported orientations
     override this.ShouldAutorotateToInterfaceOrientation (orientation) =
         true
+
+    override this.PrefersStatusBarHidden() = true
