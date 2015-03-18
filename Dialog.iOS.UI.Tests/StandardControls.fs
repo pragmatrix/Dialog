@@ -41,6 +41,7 @@ let standardControls =
         let button = button "Button" (this, Event) []
         let imageButton = imageButton imageSource (this, Event) [Width 30.; Height 30.]
         let switch = switch On (this, Event) []
+        let slider = slider 0.5 (this, Event) []
 
         let label = label "Label" []
         let image = image imageSource [Width 30.; Height 30.]
@@ -54,6 +55,7 @@ let standardControls =
                 present "button" button
                 present "imageButton" imageButton
                 present "switch" switch
+                present "slider" slider
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center]
 

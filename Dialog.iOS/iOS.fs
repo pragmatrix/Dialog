@@ -27,7 +27,10 @@ module iOS =
             CGSize(nf width, nf height)
         static member color color = 
             new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
- 
+        static member color (color:UIColor) = 
+            let r, g, b, a = color.GetRGBA()
+            { red = r |> float; green = g |> float; blue = b |> float; alpha = a |> float}
+
     type IOSView = IOSView of UIView
 
     type Control(view: UIView, css: CSSNode) = 
@@ -51,6 +54,11 @@ module iOS =
                 fun node width ->
                     let sz = this.view.SizeThatFits(new CGSize(nfloat width, nfloat 0.0))
                     MeasureOutput(sz.Width |> float32, sz.Height |> float32)
+
+        member this.minimumSize(width, height) = 
+            this.css.MeasureFunction <-
+                fun _ _ ->
+                    MeasureOutput(width |> float32, height |> float32)
 
     type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
         inherit Control(view, css)
@@ -150,7 +158,7 @@ module iOS =
             fun this -> this.view.Frame |> Convert.rect |> Frame
         |> reader --
             fun this -> IOSView this.view
-        |> defaultValue -- BackgroundColor Color.Transparent
+        |> reader -- fun this -> this.view.BackgroundColor |> Convert.color |> BackgroundColor
         |> writer --
             fun this (BackgroundColor color) ->
                 this.view.BackgroundColor <- Convert.color color
@@ -303,7 +311,7 @@ module iOS =
             control.useSizeThatFits()
             control
 
-        let switchAccessor = 
+        let accessor = 
             accessorFor<Control<UISwitch>>.extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
             |> reader -- fun this -> Switch.fromBoolean this.view.On
@@ -312,7 +320,29 @@ module iOS =
 
         controlClassPrototype()
             .Constructor(construct)
-            .PropertyAccessor(switchAccessor)
+            .PropertyAccessor(accessor)
+
+    let sliderDefaultSize = 
+        use sw = new UISlider()
+        sw.Frame.Width |> float, sw.Frame.Height |> float
+
+    let sliderService = 
+        let construct() = 
+            let slider = new UISlider()
+            let control = createControl slider
+            control.minimumSize(sliderDefaultSize)
+            control
+
+        let accessor = 
+            accessorFor<Control<UISlider>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+            |> reader -- fun this -> SliderValue (this.view.Value |> float)
+            |> writer -- fun this (SliderValue v) -> this.view.Value <- v |> float32
+            |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(accessor)
 
     let labelService =
 
@@ -520,6 +550,7 @@ module iOS =
 
     UI.buttonService.register buttonService.Instantiate
     UI.switchService.register switchService.Instantiate
+    UI.sliderService.register sliderService.Instantiate
 
     UI.labelService.register labelService.Instantiate
     UI.imageService.register imageService.Instantiate
