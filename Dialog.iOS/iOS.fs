@@ -287,7 +287,7 @@ module iOS =
             accessorFor<Control<UIButton>>.extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
             |> fontProperties (fun c -> c.view.Font) (fun c f -> c.view.Font <- f)
-            |> defaultValue -- Text ""
+            |> reader -- fun this -> this.view.Title(UIControlState.Normal) |> Text
             |> writer --
                 fun this (Text t) ->
                     UIView.PerformWithoutAnimation (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
@@ -350,11 +350,11 @@ module iOS =
         let labelAccessor = 
             accessorFor<Control<UILabel>>.extend controlAccessor
             |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
-            |> defaultValue -- Text ""
+            |> reader -- fun this -> Text this.view.Text
             |> writer -- fun this (Text t) -> 
                 this.view.Text <- t
                 this.css.MarkDirty()
-            |> defaultValue -- TextColor Color.Black
+            |> reader -- fun this -> this.view.TextColor |> Convert.color |> TextColor
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
 
         let constructor'() = 
