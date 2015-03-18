@@ -23,13 +23,31 @@ module iOS =
             { left = r.X |> float; top = r.Y |> float; width = r.Width |> float; height = r.Height |> float }
         static member rect (r: Rect) = 
             CGRect(nf r.left, nf r.top, nf r.width, nf r.height)
+
         static member toSize (width:float, height:float) =
             CGSize(nf width, nf height)
+
         static member color color = 
             new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
         static member color (color:UIColor) = 
             let r, g, b, a = color.GetRGBA()
             { red = r |> float; green = g |> float; blue = b |> float; alpha = a |> float}
+
+        static member align align = 
+            match align with
+            | Align.Auto -> CSSAlign.Auto
+            | Align.Start -> CSSAlign.FlexStart
+            | Align.Center -> CSSAlign.Center
+            | Align.End -> CSSAlign.FlexEnd
+            | Align.Stretch -> CSSAlign.Stretch
+        static member align align = 
+            match align with
+            | CSSAlign.Auto -> Align.Auto
+            | CSSAlign.FlexStart -> Align.Start
+            | CSSAlign.Center -> Align.Center
+            | CSSAlign.FlexEnd -> Align.End
+            | CSSAlign.Stretch -> Align.Stretch
+            | unexpected -> failwithf "unexpected align: %A" unexpected
 
     type IOSView = IOSView of UIView
 
@@ -125,26 +143,23 @@ module iOS =
     let mkHandler handler = EventHandler handler
     let mkEvent target msg reference = { message = msg; props = []; sender = reference }
 
-    let private convertAlign align = 
-        match align with
-        | Align.Auto -> CSSAlign.Auto
-        | Align.Start -> CSSAlign.FlexStart
-        | Align.Center -> CSSAlign.Center
-        | Align.End -> CSSAlign.FlexEnd
-        | Align.Stretch -> CSSAlign.Stretch
-
     let private setSpacing spacing setter = 
         setter(SpacingType.Left, spacing.left |> float32)
         setter(SpacingType.Top, spacing.top |> float32)
         setter(SpacingType.Right, spacing.right |> float32)
         setter(SpacingType.Bottom, spacing.bottom |> float32)
 
+    let private getSpacing getter =
+        let left = getter(SpacingType.Left) |> float
+        let top = getter(SpacingType.Top) |> float
+        let right = getter(SpacingType.Right) |> float
+        let bottom = getter(SpacingType.Bottom) |> float
+        { Spacing.left = left; top = top; right = right; bottom = bottom }
 
     let controlProperties (get: 'a -> UIControl) accessor =
         accessor
-        |> defaultValue -- Enabled
-        |> writer --
-            fun this (e:Switch) -> (get this).Enabled <- e.Boolean
+        |> reader -- fun this -> (get this).Enabled |> Activation.fromBoolean
+        |> writer -- fun this (e:Switch) -> (get this).Enabled <- e.Boolean
 
     let fontProperties (get: 'a -> UIFont) (set: 'a -> UIFont -> unit) accessor = 
         accessor
@@ -154,36 +169,32 @@ module iOS =
 
     let controlAccessor = 
         accessorFor<Control>
-        |> reader --
-            fun this -> this.view.Frame |> Convert.rect |> Frame
-        |> reader --
-            fun this -> IOSView this.view
+        |> reader -- fun this -> this.view.Frame |> Convert.rect |> Frame
+        |> reader -- fun this -> IOSView this.view
+
         |> reader -- fun this -> this.view.BackgroundColor |> Convert.color |> BackgroundColor
-        |> writer --
-            fun this (BackgroundColor color) ->
-                this.view.BackgroundColor <- Convert.color color
+        |> writer -- fun this (BackgroundColor color) -> this.view.BackgroundColor <- Convert.color color
                 
-        |> writer --
-            fun this (AlignSelf align) ->
-                this.css.AlignSelf <- convertAlign align
-        |> writer --
-            fun this (Flex f) ->
-                this.css.Flex <- f |> float32
-        |> writer --
-            fun this (Margin spacing) ->
-                setSpacing spacing this.css.SetMargin
-        |> writer --
-            fun this (Border spacing) ->
-                setSpacing spacing this.css.SetBorder
-        |> writer --
-            fun this (Padding spacing) ->
-                setSpacing spacing this.css.SetPadding
-        |> writer --
-            fun this (Width width) ->
-                this.css.StyleWidth <- width |> float32
-        |> writer --
-            fun this (Height height) ->
-                this.css.StyleHeight <- height |> float32
+        |> reader -- fun this -> this.css.AlignSelf |> Convert.align
+        |> writer -- fun this (AlignSelf align) -> this.css.AlignSelf <- Convert.align align
+
+        |> reader -- fun this -> this.css.Flex |> float |> Flex
+        |> writer -- fun this (Flex f) -> this.css.Flex <- f |> float32
+
+        |> reader -- fun this -> getSpacing this.css.GetMargin |> Margin
+        |> writer -- fun this (Margin spacing) -> setSpacing spacing this.css.SetMargin
+
+        |> reader -- fun this -> getSpacing this.css.GetBorder |> Border
+        |> writer -- fun this (Border spacing) -> setSpacing spacing this.css.SetBorder
+
+        |> reader -- fun this -> getSpacing this.css.GetPadding |> Padding
+        |> writer -- fun this (Padding spacing) -> setSpacing spacing this.css.SetPadding
+
+        |> reader -- fun this -> this.css.StyleWidth |> float |> Width
+        |> writer -- fun this (Width width) -> this.css.StyleWidth <- width |> float32
+
+        |> reader -- fun this -> this.css.StyleHeight |> float |> Width
+        |> writer -- fun this (Height height) -> this.css.StyleHeight <- height |> float32
 
     let eventMounter f accessor = 
         accessor
@@ -225,33 +236,55 @@ module iOS =
 
         let viewAccessor = 
             accessorFor<View>.extend controlAccessor
-            |> defaultValue -- AlignItems Auto
-            |> defaultValue -- JustifyContent.Start
+
+            |> reader -- 
+                fun this -> 
+                    match this.css.FlexDirection with
+                    | CSSFlexDirection.Column -> LayoutDirection.Column
+                    | CSSFlexDirection.Row -> LayoutDirection.Row
+                    | unexpected -> failwithf "unexpected FlexDirection: %A" unexpected
             |> writer --
                 fun this (direction : LayoutDirection) ->
                     this.css.FlexDirection <-
-                        match direction with
-                        | LayoutDirection.Column -> CSSFlexDirection.Column
-                        | LayoutDirection.Row -> CSSFlexDirection.Row
+                    match direction with
+                    | LayoutDirection.Column -> CSSFlexDirection.Column
+                    | LayoutDirection.Row -> CSSFlexDirection.Row
 
+            |> reader --
+                fun this ->
+                    match this.css.JustifyContent with
+                    | CSSJustify.FlexStart -> JustifyContent.Start
+                    | CSSJustify.Center -> JustifyContent.Center
+                    | CSSJustify.FlexEnd -> JustifyContent.End
+                    | CSSJustify.SpaceBetween -> JustifyContent.SpaceBetween
+                    | CSSJustify.SpaceAround -> JustifyContent.SpaceAround
+                    | unexpected -> failwithf "unexpected JustifyContent: %A" unexpected
             |> writer --
                 fun this (justify : JustifyContent) ->
                     this.css.JustifyContent <-
-                        match justify with
-                        | JustifyContent.Start -> CSSJustify.FlexStart
-                        | JustifyContent.Center -> CSSJustify.Center
-                        | JustifyContent.End -> CSSJustify.FlexEnd
-                        | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
-                        | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
-            |> writer --
-                fun this (AlignItems align) ->
-                    this.css.AlignItems <- convertAlign align
+                    match justify with
+                    | JustifyContent.Start -> CSSJustify.FlexStart
+                    | JustifyContent.Center -> CSSJustify.Center
+                    | JustifyContent.End -> CSSJustify.FlexEnd
+                    | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
+                    | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
+
+            |> reader -- fun this -> this.css.AlignItems |> Convert.align |> AlignItems
+            |> writer -- fun this (AlignItems align) -> this.css.AlignItems <- Convert.align align
+
+
+            |> reader --
+                fun this ->
+                    match this.css.Wrap with
+                    | CSSWrap.NoWrap -> Wrap.NoWrap
+                    | CSSWrap.Wrap -> Wrap.Wrap
+                    | unexpected -> failwithf "unexpected Wrap: %A" unexpected
             |> writer --
                 fun this (wrap : Wrap) ->
                     this.css.Wrap <- 
-                        match wrap with
-                        | Wrap.NoWrap -> CSSWrap.NoWrap
-                        | Wrap.Wrap -> CSSWrap.Wrap
+                    match wrap with
+                    | Wrap.NoWrap -> CSSWrap.NoWrap
+                    | Wrap.Wrap -> CSSWrap.Wrap
 
 
         let mounter (this : View) (index:int) (nested : Control) = 

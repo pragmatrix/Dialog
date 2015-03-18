@@ -140,7 +140,7 @@ module UI =
         | Wrap
         | NoWrap
 
-    type Flex = Flex of int
+    type Flex = Flex of float
 
     type Spacing = { left: float; top: float; right: float; bottom: float }
         with
