@@ -35,8 +35,8 @@ type AppDelegate () =
         let currentTest = iconViewTest
         let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
         let currentTest = popoverTest
-        let currentTest = standardControls
         let currentTest = rangeLimitedSlider
+        let currentTest = standardControls
         
         let createView() = renderAsView (render currentTest [])
         

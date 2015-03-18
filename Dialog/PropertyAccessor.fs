@@ -25,9 +25,9 @@ type MountedProperty =
 type PropertyAccessor<'target> = 
     { 
         readers: Map<string, 'target -> obj>;
-        mounters: Map<string, 'target -> Reference -> obj -> (unit -> unit)>;
         writers: Map<string, 'target -> obj -> unit>;
-        defaultValues: Map<string, obj>;
+
+        mounters: Map<string, 'target -> Reference -> obj -> (unit -> unit)>;
     }
 
     member this.read (target: 'target) (decon: 'property -> 'value) : 'value = 
@@ -46,10 +46,11 @@ type PropertyAccessor<'target> =
             }
         match this.mounters.TryFind name with
         | Some mounter ->
-            let remount = this.mount target identity
             let current = ref property
+            let remount = this.mount target identity
             Trace.mountingProperty identity name property
             let unmounter = mounter target reference property
+
             
             {
                 new MountedProperty with
@@ -67,26 +68,32 @@ type PropertyAccessor<'target> =
                         Trace.unmountedProperty identity name
             }
         | None ->
+
         match this.writers.TryFind name with
         | Some writer -> 
-            let current = ref property
+            let read = this.readers.[name]
+            let previous = read target
             Trace.mountingProperty identity name property
             writer target property
             { 
                 new MountedProperty with
                     member mp.update property =
-                        if !current <> property then
+                        // need to read back (value may be changed)
+                        // this may have a performance impact, but handling this problem later in the
+                        // context of a general invaliation based system makes more sense.
+                        
+                        // also note, if tracing would be disabled, a read would not be required.
+                        
+                        let current = read target
+                        if current <> property then
                             Trace.updatingProperty identity name property
                             writer target property
-                            current := property
                         mp
                     member mp.unmount() =
-                        match this.defaultValues.TryFind name with
-                        | Some value -> 
-                            if !current <> value then
+                        let current = read target
+                        if current <> previous then
                                 Trace.updatingProperty identity name property
-                                writer target value
-                        | None -> ()
+                                writer target previous
                         Trace.unmountedProperty identity name
             }
         | None ->
@@ -114,7 +121,6 @@ type PropertyAccessor<'target> =
             readers = Map.joinSeq this.readers promotedReaders
             writers = Map.joinSeq this.writers promotedWriters
             mounters = Map.joinSeq this.mounters promotedMounters
-            defaultValues = Map.join this.defaultValues parent.defaultValues
             }
 
 module PropertyAccessor =
@@ -122,7 +128,7 @@ module PropertyAccessor =
     let inline ( -- ) l r = l r
 
     let accessorFor<'target> : PropertyAccessor<'target> = 
-        { readers = Map.empty; mounters = Map.empty; writers = Map.empty; defaultValues = Map.empty }
+        { readers = Map.empty; mounters = Map.empty; writers = Map.empty }
 
     // reader
 
@@ -147,7 +153,3 @@ module PropertyAccessor =
         let name = typedefof<'property>.Name
         let writer target property = f target (unbox property)
         { this with writers = this.writers.Add(name, writer) }
-
-    let defaultValue (v:'property) (this : PropertyAccessor<'target>) = 
-        let name = v.GetType().Name
-        { this with defaultValues = this.defaultValues.Add(name, box v) }

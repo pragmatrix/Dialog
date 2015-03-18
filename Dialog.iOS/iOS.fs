@@ -30,6 +30,9 @@ module iOS =
         static member color color = 
             new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
         static member color (color:UIColor) = 
+            match color with
+            | null -> Color.Transparent
+            | _ ->
             let r, g, b, a = color.GetRGBA()
             { red = r |> float; green = g |> float; blue = b |> float; alpha = a |> float}
 
@@ -163,7 +166,7 @@ module iOS =
 
     let fontProperties (get: 'a -> UIFont) (set: 'a -> UIFont -> unit) accessor = 
         accessor
-        |> reader -- fun this -> (get this).PointSize
+        |> reader -- fun this -> (get this).PointSize |> float |> FontSize
         |> writer -- fun this (FontSize s) -> set this ((get this).WithSize(nfloat s))
 
 
@@ -175,7 +178,7 @@ module iOS =
         |> reader -- fun this -> this.view.BackgroundColor |> Convert.color |> BackgroundColor
         |> writer -- fun this (BackgroundColor color) -> this.view.BackgroundColor <- Convert.color color
                 
-        |> reader -- fun this -> this.css.AlignSelf |> Convert.align
+        |> reader -- fun this -> this.css.AlignSelf |> Convert.align |> AlignSelf
         |> writer -- fun this (AlignSelf align) -> this.css.AlignSelf <- Convert.align align
 
         |> reader -- fun this -> this.css.Flex |> float |> Flex
@@ -193,7 +196,7 @@ module iOS =
         |> reader -- fun this -> this.css.StyleWidth |> float |> Width
         |> writer -- fun this (Width width) -> this.css.StyleWidth <- width |> float32
 
-        |> reader -- fun this -> this.css.StyleHeight |> float |> Width
+        |> reader -- fun this -> this.css.StyleHeight |> float |> Height
         |> writer -- fun this (Height height) -> this.css.StyleHeight <- height |> float32
 
     let eventMounter f accessor = 
@@ -491,6 +494,7 @@ module iOS =
 
         let popoverAccessor = 
             accessorFor<Popover>
+            |> reader -- fun this -> this.containedController.Title |> Title
             |> writer -- fun this (Title t) -> this.containedController.Title <- t
             |> mounter --
                 // this is probably a common pattern to abstract the lifetime of a property int
