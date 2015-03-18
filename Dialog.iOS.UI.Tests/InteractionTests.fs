@@ -5,7 +5,6 @@ open Dialog.UI
 
 open System
 
-
 type Events = 
     | SliderChanged
     | MinimumChanged
@@ -15,7 +14,8 @@ type State = { slider: float; minimum: float ; maximum: float }
 
 let rangeLimitedSlider = 
 
-    let update this e = 
+    let update this e =
+        printfn "msg: %A" e.message 
         match e.message with
         | MinimumChanged ->
             { this.state with minimum = Math.Min(this.state.maximum, e.sender.get(function SliderValue v -> v))}
