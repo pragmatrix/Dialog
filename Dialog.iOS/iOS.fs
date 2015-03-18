@@ -290,13 +290,14 @@ module iOS =
             |> defaultValue -- Text ""
             |> writer --
                 fun this (Text t) ->
-                    UIView.PerformWithoutAnimation
-                        (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
+                    UIView.PerformWithoutAnimation (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
+                    this.css.MarkDirty()
 
             |> mounter --
                 fun this (Image source) ->
                     this.view.SetImage(loadImage source, UIControlState.Normal)
-                    fun () -> this.view.SetImage(null, UIControlState.Normal)
+                    fun () -> 
+                        this.view.SetImage(null, UIControlState.Normal)
 
             |> eventMounter -- fun this (OnClick e) -> e, this.view.TouchUpInside
 
@@ -350,7 +351,9 @@ module iOS =
             accessorFor<Control<UILabel>>.extend controlAccessor
             |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
             |> defaultValue -- Text ""
-            |> writer -- fun this (Text t) -> this.view.Text <- t
+            |> writer -- fun this (Text t) -> 
+                this.view.Text <- t
+                this.css.MarkDirty()
             |> defaultValue -- TextColor Color.Black
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
 

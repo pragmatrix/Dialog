@@ -35,11 +35,11 @@ let rangeLimitedSlider =
         let value = Math.Min(maximum, value)
 
         view [
-            label ("minimum: " + minimum.ToString()) []
+            label (sprintf "minimum: %g" minimum) []
             slider minimum (this, MinimumChanged) []
-            label ("maximum: " + maximum.ToString()) []
+            label (sprintf "maximum: %g" maximum) []
             slider maximum (this, MaximumChanged) []
-            label ("value: " + value.ToString()) []
+            label (sprintf "value: %g" value) []
             slider value (this, SliderChanged) []
         ] [AlignItems.Center; JustifyContent.Center; BackgroundColor Color.White]
 
