@@ -23,9 +23,9 @@ type PropertyReconciler<'target>(writer : PropertyAccessor<'target>, target : 't
     let reconcile = 
         let functions = 
             {
-                insert = fun _ k v -> mountProperty v
-                update = fun _ k mounted v -> mounted.update v
-                remove = fun k mounted -> mounted.unmount()
+                insert = fun _ _ v -> mountProperty v
+                update = fun _ _ mounted v -> mounted.update v
+                remove = fun _ mounted -> mounted.unmount()
             }
 
         reconcile functions
