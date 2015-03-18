@@ -10,7 +10,9 @@ open Dialog.Core
 open LayoutTests
 open PopoverTests
 open ComponentTests
+open InteractionTests
 open StandardControls
+
 
 [<Register ("AppDelegate")>]
 type AppDelegate () =
@@ -34,6 +36,7 @@ type AppDelegate () =
         let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
         let currentTest = popoverTest
         let currentTest = standardControls
+        let currentTest = rangeLimitedSlider
         
         let createView() = renderAsView (render currentTest [])
         
