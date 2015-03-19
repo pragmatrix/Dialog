@@ -25,7 +25,7 @@ let presenterComponent =
         .Render(render)
 
 let present label content = render presenterComponent [Label label; Content content]
-let group l = label l [AlignSelf.Start; FontSize 20.; TextColor Color.Red]
+let group l = label (l+":") [AlignSelf.Start; FontSize 20.; TextColor Color.Red]
 
 type Events = 
     | ButtonPressed
@@ -65,7 +65,7 @@ let standardControls =
 
         view [
             view [
-                group "passive"
+                group "static"
                 present "label" label
                 present "image" image
                 group "controls"
@@ -76,7 +76,7 @@ let standardControls =
                 present "stepper" stepper
                 present "segmented" segmented
             ] [Width 300.]
-        ] [BackgroundColor Color.White; AlignItems.Center]
+        ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
     Define
         .Component()
