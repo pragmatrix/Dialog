@@ -16,10 +16,10 @@ Conceptually, Dialog is new in many respects:
 
 ## Examples
 
-- [Interaction](https://github.com/pragmatrix/Dialog/blob/master/Dialog.iOS.UI.Tests/InteractionTests.fs)  
-[](screenshots/interaction.png)
-- [Standard Controls](https://github.com/pragmatrix/Dialog/blob/master/Dialog.iOS.UI.Tests/StandardControls.fs)  
-[](screenshots/standard-controls.png)
+- [Interaction](https://github.com/pragmatrix/Dialog/blob/master/Dialog.iOS.UI.Tests/InteractionTests.fs)   
+![](screenshots/interaction.png)
+- [Standard Controls](https://github.com/pragmatrix/Dialog/blob/master/Dialog.iOS.UI.Tests/StandardControls.fs)   
+![](screenshots/standard-controls.png)
 - [Popover](https://github.com/pragmatrix/Dialog/blob/master/Dialog.iOS.UI.Tests/PopoverTests.fs)
 
 ## Vision
