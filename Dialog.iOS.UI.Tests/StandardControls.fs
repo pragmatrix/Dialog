@@ -27,7 +27,7 @@ let present label content = render presenterComponent [Label label; Content cont
 let group l = label (l+":") [AlignSelf.Start; FontSize 20.; TextColor Color.Red]
 
 type Events = 
-    | ButtonPressed
+    | Event
     | SliderChanged
     | StepperChanged
 
@@ -36,22 +36,26 @@ let standardControls =
     let update this e = 
         printfn "msg: %A" e.message
         match e.message with
-        | ButtonPressed -> this.state
+        | Event -> this.state
         | SliderChanged -> e.sender.get(fun (SliderValue v) -> v)
         | StepperChanged -> e.sender.get(fun (StepperValue v) -> (v |> float) / 100.)
             
     let render this = 
         let imageSource = Resource "cloud-download.png"
-        let button = button "Button" (this, ButtonPressed) []
-        let imageButton = imageButton imageSource (this, ButtonPressed) [Width 30.; Height 30.]
-        let switch = switch On (this, ButtonPressed) []
+        
+        let label = label "Label" []
+        let image = image imageSource [Width 30.; Height 30.]
+
+        let button = button "Button" (this, Event) []
+        let imageButton = imageButton imageSource (this, Event) [Width 30.; Height 30.]
+        let switch = switch On (this, Event) []
         let slider = slider this.state (this, SliderChanged) []
         let newStepperValue = (this.state * 100. |> Math.Round |> int)
         let stepper = stepper newStepperValue 100 (this, StepperChanged) []
-        let segmented = segmented [Text "One"; Text "Two"; Text "Three"] (this, ButtonPressed) []
+        let segmented = segmented [Text "One"; Text "Two"; Text "Three"] (this, Event) []
 
-        let label = label "Label" []
-        let image = image imageSource [Width 30.; Height 30.]
+        let entryNormal = entry (this, Event) []
+        let entrySecure = entry (this, Event) [Secure]
 
         view [
             view [
@@ -65,6 +69,9 @@ let standardControls =
                 present "slider" slider
                 present "stepper" stepper
                 present "segmented" segmented
+                group "text"
+                present "entry" entryNormal
+                present "entry Secure" entrySecure
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 

@@ -476,6 +476,40 @@ module iOS =
         controlClassPrototype()
             .Constructor(construct)
             .PropertyAccessor(accessor)
+    
+    let entryService = 
+        let construct() = 
+            let view = new UITextField()
+            view.BorderStyle <- UITextBorderStyle.RoundedRect
+            view.ClearButtonMode <- UITextFieldViewMode.WhileEditing
+            view.Font <- UIFont.SystemFontOfSize(nfloat 14.)
+            let control = createControl view
+            // IB default
+            control.useSizeThatFits(); //(97., 30.)
+            control
+
+        let accessor =
+            accessorFor<Control<UITextField>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+
+            |> reader -- fun this -> this.view.Text |> Text
+            |> writer -- fun this (Text t) -> 
+                this.view.Text <- t
+                this.css.MarkDirty()
+
+            |> mounter -- 
+                fun this Secure -> 
+                    this.view.SecureTextEntry <- true
+                    fun () -> this.view.SecureTextEntry <- false
+
+            |> eventMounter -- fun this (OnCompleted e) -> e, this.view.Ended
+            |> eventMounter -- fun this (OnChanged e) -> 
+                this.css.MarkDirty()
+                e, this.view.ValueChanged
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(accessor)
         
     let imageService = 
 
@@ -662,14 +696,16 @@ module iOS =
         registerEventRoot mounted |> ignore
         controllerService.instance.controller
 
+    UI.labelService.register labelService.Instantiate
+    UI.imageService.register imageService.Instantiate
+
     UI.buttonService.register buttonService.Instantiate
     UI.switchService.register switchService.Instantiate
     UI.sliderService.register sliderService.Instantiate
     UI.stepperService.register stepperService.Instantiate
     UI.segmentedService.register segmentedService.Instantiate
 
-    UI.labelService.register labelService.Instantiate
-    UI.imageService.register imageService.Instantiate
+    UI.entryService.register entryService.Instantiate
 
     UI.viewService.register viewService.Instantiate
     UI.popoverService.register popoverService.Instantiate

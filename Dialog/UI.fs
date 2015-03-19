@@ -39,6 +39,12 @@ module UI =
     type Segments = Segments of Text list
     type SelectedSegment = SelectedSegment of int option
 
+    type Secure = | Secure
+    type ClearButton = | ClearButton
+
+    type OnCompleted = OnCompleted of (Component * obj)
+    let OnCompleted (c, e) = OnCompleted (c, box e)
+
     type OnClick = OnClick of (Component * obj)
     let OnClick (c, e) = OnClick (c, box e)
 
@@ -186,14 +192,16 @@ module UI =
     let controlType = Define.ServiceType("Control")
     let controllerType = Define.ServiceType("Controller")
 
+    let labelService = Define.ServiceRef("Label", controlType)
+    let imageService = Define.ServiceRef("Image", controlType)
+
     let buttonService = Define.ServiceRef("Button", controlType)
     let switchService = Define.ServiceRef("Switch", controlType)
     let sliderService = Define.ServiceRef("Slider", controlType)
     let stepperService = Define.ServiceRef("Stepper", controlType)
     let segmentedService = Define.ServiceRef("Segmented", controlType)
 
-    let labelService = Define.ServiceRef("Label", controlType)
-    let imageService = Define.ServiceRef("Image", controlType)
+    let entryService = Define.ServiceRef("Entry", controlType)
 
     let viewService = Define.ServiceRef("View", controlType)
     let popoverService = Define.ServiceRef("Popover", controllerType)
@@ -207,6 +215,8 @@ module UI =
     let slider value event p = service sliderService (Properties.concat [SliderValue value; OnChanged event] p) []
     let stepper value steps event p = service stepperService (Properties.concat [Steps steps; StepperValue value; OnChanged event] p) []
     let segmented segments event p = service segmentedService (Properties.concat [Segments segments; OnChanged event] p) []
+
+    let entry event p = service entryService (Properties.concat [OnCompleted event] p) []
 
     let view nested p = service viewService p nested
     let popover title dismissed nested p = service popoverService (Properties.concat [Title title; OnDismissed dismissed] p) nested
