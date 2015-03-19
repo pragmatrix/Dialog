@@ -57,8 +57,8 @@ let standardControls =
         let switch = switch On (this, ButtonPressed) []
         let slider = slider this.state (this, SliderChanged) []
         let newStepperValue = (this.state * 100. |> Math.Round |> int)
-        printfn "new stepper value: %A" newStepperValue
         let stepper = stepper newStepperValue 100 (this, StepperChanged) []
+        let segmented = segmented [Text "One"; Text "Two"; Text "Three"] (this,ButtonPressed) []
 
         let label = label "Label" []
         let image = image imageSource [Width 30.; Height 30.]
@@ -74,6 +74,7 @@ let standardControls =
                 present "switch" switch
                 present "slider" slider
                 present "stepper" stepper
+                present "segmented" segmented
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center]
 

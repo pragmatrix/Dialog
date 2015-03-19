@@ -36,6 +36,9 @@ module UI =
     type Steps = Steps of int
     type StepperValue = StepperValue of int
 
+    type Segments = Segments of Text list
+    type SelectedSegment = SelectedSegment of int option
+
     type OnClick = OnClick of (Component * obj)
     let OnClick (c, e) = OnClick (c, box e)
 
@@ -187,6 +190,7 @@ module UI =
     let switchService = Define.ServiceRef("Switch", controlType)
     let sliderService = Define.ServiceRef("Slider", controlType)
     let stepperService = Define.ServiceRef("Stepper", controlType)
+    let segmentedService = Define.ServiceRef("Segmented", controlType)
 
     let labelService = Define.ServiceRef("Label", controlType)
     let imageService = Define.ServiceRef("Image", controlType)
@@ -201,11 +205,10 @@ module UI =
     let imageButton source event p = service buttonService (Properties.concat [Image source; OnClick event] p) []
     let switch sw event p = service switchService (Properties.concat [sw; OnChanged event] p) []
     let slider value event p = service sliderService (Properties.concat [SliderValue value; OnChanged event] p) []
-
     let stepper value steps event p = service stepperService (Properties.concat [Steps steps; StepperValue value; OnChanged event] p) []
+    let segmented segments event p = service segmentedService (Properties.concat [Segments segments; OnChanged event] p) []
 
     let view nested p = service viewService p nested
     let popover title dismissed nested p = service popoverService (Properties.concat [Title title; OnDismissed dismissed] p) nested
-
 
     let mountRoot = Services.mountRoot

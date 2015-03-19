@@ -427,6 +427,55 @@ module iOS =
             .Constructor(construct)
             .PropertyAccessor(accessor)
 
+    let segmentedService = 
+        let construct() = 
+            let segmented = new UISegmentedControl()
+            let control = createControl segmented
+            control.useSizeThatFits()
+            control
+
+        let accessor = 
+            accessorFor<Control<UISegmentedControl>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+
+            |> reader -- fun this ->
+                match int this.view.SelectedSegment with
+                | -1 -> None |> SelectedSegment
+                | v -> v |> Some |> SelectedSegment
+
+            |> writer -- fun this (SelectedSegment selected) ->
+                let v = 
+                    match selected with
+                    | None -> -1
+                    | Some v -> v
+
+                this.view.SelectedSegment <- nint v
+
+            |> reader -- fun this ->
+                let titles = [
+                    for i in 0..(int this.view.NumberOfSegments)-1 do
+                        yield Text <| this.view.TitleAt (nint i)
+                   ]
+                titles |> Segments
+
+            |> writer -- fun this (Segments segments) ->
+                let segments = segments |> List.toArray
+                
+                for i in 0..segments.Length-1 do
+                    let title = segments.[i] |> function Text t -> t
+                    if i < int this.view.NumberOfSegments then
+                        this.view.SetTitle(title, nint i)
+                    else 
+                        this.view.InsertSegment(title, nint i, true)
+
+                for i in segments.Length..(int this.view.NumberOfSegments-1) do
+                    this.view.RemoveSegmentAtIndex(nint i, true)
+
+            |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(accessor)
         
     let imageService = 
 
@@ -617,6 +666,7 @@ module iOS =
     UI.switchService.register switchService.Instantiate
     UI.sliderService.register sliderService.Instantiate
     UI.stepperService.register stepperService.Instantiate
+    UI.segmentedService.register segmentedService.Instantiate
 
     UI.labelService.register labelService.Instantiate
     UI.imageService.register imageService.Instantiate
