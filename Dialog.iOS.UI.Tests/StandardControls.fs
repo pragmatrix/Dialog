@@ -2,9 +2,7 @@
 
 open Dialog
 open Dialog.UI
-
-type Events = 
-    | Event
+open System
 
 type Content = Content of Element
 type Label = Label of string
@@ -29,19 +27,38 @@ let presenterComponent =
 let present label content = render presenterComponent [Label label; Content content]
 let group l = label l [AlignSelf.Start; FontSize 20.; TextColor Color.Red]
 
+type Events = 
+    | ButtonPressed
+    | SliderChanged
+    | StepperChanged
+
 let standardControls = 
 
     let update this e = 
+        printfn "msg: %A" e.message
         match e.message with
-        | Event -> this.state
-
+        | ButtonPressed -> this.state
+        | SliderChanged ->
+            let r = e.sender.get(function SliderValue v -> v)
+            printfn "new: %A" r
+            r
+        | StepperChanged ->
+            let r = e.sender.get(function StepperValue v -> (v |> float) / 100.)
+            printfn "new: %A" r
+            r
+            
     let render this = 
         let imageSource = Resource "cloud-download.png"
 
-        let button = button "Button" (this, Event) []
-        let imageButton = imageButton imageSource (this, Event) [Width 30.; Height 30.]
-        let switch = switch On (this, Event) []
-        let slider = slider 0.5 (this, Event) []
+        printfn "state: %A" this.state
+
+        let button = button "Button" (this, ButtonPressed) []
+        let imageButton = imageButton imageSource (this, ButtonPressed) [Width 30.; Height 30.]
+        let switch = switch On (this, ButtonPressed) []
+        let slider = slider this.state (this, SliderChanged) []
+        let newStepperValue = (this.state * 100. |> Math.Round |> int)
+        printfn "new stepper value: %A" newStepperValue
+        let stepper = stepper newStepperValue 100 (this, StepperChanged) []
 
         let label = label "Label" []
         let image = image imageSource [Width 30.; Height 30.]
@@ -56,6 +73,7 @@ let standardControls =
                 present "imageButton" imageButton
                 present "switch" switch
                 present "slider" slider
+                present "stepper" stepper
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center]
 
@@ -63,7 +81,7 @@ let standardControls =
         .Component()
         .Update(update)
         .Render(render)
-        .InitialState(0)
+        .InitialState(0.5)
 
 
 

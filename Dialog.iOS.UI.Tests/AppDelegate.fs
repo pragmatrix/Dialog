@@ -32,11 +32,12 @@ type AppDelegate () =
         let currentTest = replaceNested
         let currentTest = twoComponents
         let currentTest = nestedViewWithLayoutChange
-        let currentTest = iconViewTest
         let currentTest = centeredItemsDoNotUseSpaceBetweenInRowDirection
         let currentTest = popoverTest
         let currentTest = rangeLimitedSlider
         let currentTest = standardControls
+        let currentTest = iconViewTest
+        let currentTest = dynamicContentTest
         
         let createView() = renderAsView (render currentTest [])
         

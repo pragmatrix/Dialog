@@ -403,6 +403,31 @@ module iOS =
             .Constructor(constructor')
             .PropertyAccessor(labelAccessor)
 
+
+    let stepperService = 
+        let construct() = 
+            let stepper = new UIStepper()
+            let control = createControl stepper
+            control.useSizeThatFits()
+            control
+
+        let accessor = 
+            accessorFor<Control<UIStepper>>.extend controlAccessor
+            |> controlProperties (fun c -> c.view :> UIControl)
+
+            |> reader -- fun this -> this.view.MaximumValue |> Math.Round |> int |> Steps
+            |> writer -- fun this (Steps steps) -> this.view.MaximumValue <- steps |> float
+
+            |> reader -- fun this -> this.view.Value |> Math.Round |> int |> StepperValue
+            |> writer -- fun this (StepperValue v) -> this.view.Value <- v |> float
+
+            |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(accessor)
+
+        
     let imageService = 
 
         let accessor =
@@ -591,6 +616,7 @@ module iOS =
     UI.buttonService.register buttonService.Instantiate
     UI.switchService.register switchService.Instantiate
     UI.sliderService.register sliderService.Instantiate
+    UI.stepperService.register stepperService.Instantiate
 
     UI.labelService.register labelService.Instantiate
     UI.imageService.register imageService.Instantiate

@@ -34,13 +34,14 @@ let iconViewTest =
     let update this e =
         match e.message with
         | Clicked1 -> printfn "Clicked1"
-        | Clicked2 -> printfn "Clicked1"
-        this.state
+        | Clicked2 -> printfn "Clicked2"
+        not this.state
 
     let render this = 
 
         let content1 = label "Hello" []
         let content2 = label "IconView Component" []
+
 
         view [
             view [
@@ -52,6 +53,30 @@ let iconViewTest =
 
     Define.Component()
         .Update(update)
-        .InitialState(10)
+        .InitialState(false)
         .Render(render)
-                
+
+type Events2 =
+    | Clicked
+
+let dynamicContentTest = 
+
+    let update this e =
+        match e.message with
+        | Clicked -> not this.state
+
+    let render this =         
+        let content1 = label "State 1" []
+        let content2 = label "State 2" []
+        
+        let contentNow = if not this.state then content1 else content2
+
+        view [
+            render iconView [Content contentNow; Image (Resource "cloud-download.png"); OnClick(this, Clicked)]
+
+        ] [BackgroundColor Color.White; JustifyContent.Center; AlignItems.Center]
+
+    Define.Component()
+        .Update(update)
+        .Render(render)
+        .InitialState(false)
