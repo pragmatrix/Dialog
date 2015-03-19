@@ -1,6 +1,6 @@
 # Dialog
 
-A framework to specify declarative user interfaces and applications in F#. Inspired by [React](http://facebook.github.io/react/).
+Declarative, code-driven user interfaces and applications in F#. Inspired by [React](http://facebook.github.io/react/).
 
 License will be BSD.
 
