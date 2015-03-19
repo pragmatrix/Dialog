@@ -18,9 +18,9 @@ let rangeLimitedSlider =
         printfn "msg: %A" e.message 
         match e.message with
         | MinimumChanged ->
-            { this.state with minimum = Math.Min(this.state.maximum, e.sender.get(function SliderValue v -> v))}
+            { this.state with minimum = Math.Min(this.state.maximum, e.sender.get(fun (SliderValue v) -> v))}
         | MaximumChanged ->
-            { this.state with maximum = Math.Max(this.state.minimum, e.sender.get(function SliderValue v -> v))}
+            { this.state with maximum = Math.Max(this.state.minimum, e.sender.get(fun (SliderValue v) -> v))}
         | SliderChanged ->
             { this.state with slider = e.sender.get(function SliderValue v -> v) }
 
