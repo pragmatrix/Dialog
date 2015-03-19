@@ -29,14 +29,17 @@ and Component =
     abstract dispatchEvent : Event<obj> -> unit
     abstract class' : ComponentClass
     abstract properties : Properties
+    abstract updateProperties : Properties -> unit
 
 and ComponentClass = 
     abstract createComponent : Properties -> Component
 
 type Component<'state, 'event> =
     {
+        // internal!
         class' : ComponentClass<'state, 'event>
-        props : Props;
+        // be warned, these will be immutable in the future
+        mutable props : Props;
         mutable state : 'state;
     } 
     interface Component with
@@ -45,6 +48,7 @@ type Component<'state, 'event> =
         member this.dispatchEvent event =
             this.state <- this.class'.update this (event.unboxed())
         member this.properties = this.props.properties
+        member this.updateProperties properties = this.props <- Props.ofProperties properties
 
 and ComponentClass<'state, 'event> =
     { 

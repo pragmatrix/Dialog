@@ -25,9 +25,10 @@ module ComponentDOM =
         with
         member this.updateProperties properties =
             match this.state with
-            | ServiceState (name, _) ->
-                { this with state = ServiceState (name, properties) }
-            | _ -> this
+            | ServiceState (name, _) -> { this with state = ServiceState (name, properties) }
+            | ComponentState c -> 
+                c.updateProperties properties
+                this
 
         member this.identity =
             match this.state with
