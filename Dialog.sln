@@ -20,6 +20,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{45EC62
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dialog.UI.WPF", "Dialog.UI.WPF\Dialog.UI.WPF.fsproj", "{C8C72CEF-97DB-4F7E-8831-B6188BCC8584}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B3C71F36-192A-4BB8-B113-A0E3986100A8}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

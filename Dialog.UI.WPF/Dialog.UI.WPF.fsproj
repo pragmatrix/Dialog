@@ -37,9 +37,25 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="WPF.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dialog.Tests\Dialog.Tests.fsproj">
+      <Name>Dialog.Tests</Name>
+      <Project>{630c91f9-1186-43d1-8c8b-616b05993411}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Dialog\Dialog.fsproj">
+      <Name>Dialog</Name>
+      <Project>{f431c008-04f2-4a1a-8adf-cb89980adbdd}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

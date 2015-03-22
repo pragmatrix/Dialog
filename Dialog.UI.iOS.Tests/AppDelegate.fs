@@ -4,7 +4,7 @@ open UIKit
 open Foundation
 
 open Dialog
-open Dialog.iOS
+open Dialog.UI.iOS
 open Dialog.Core
 
 open LayoutTests

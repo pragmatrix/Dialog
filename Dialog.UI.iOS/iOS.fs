@@ -1,4 +1,4 @@
-﻿namespace Dialog
+﻿namespace Dialog.UI
 
 open Dialog
 open Dialog.UI
@@ -197,56 +197,7 @@ module iOS =
         let viewAccessor = 
             accessorFor<View>
             |> extend controlAccessor
-
-            |> reader -- 
-                fun this -> 
-                    match this.css.FlexDirection with
-                    | CSSFlexDirection.Column -> LayoutDirection.Column
-                    | CSSFlexDirection.Row -> LayoutDirection.Row
-                    | unexpected -> failwithf "unexpected FlexDirection: %A" unexpected
-            |> writer --
-                fun this (direction : LayoutDirection) ->
-                    this.css.FlexDirection <-
-                    match direction with
-                    | LayoutDirection.Column -> CSSFlexDirection.Column
-                    | LayoutDirection.Row -> CSSFlexDirection.Row
-
-            |> reader --
-                fun this ->
-                    match this.css.JustifyContent with
-                    | CSSJustify.FlexStart -> JustifyContent.Start
-                    | CSSJustify.Center -> JustifyContent.Center
-                    | CSSJustify.FlexEnd -> JustifyContent.End
-                    | CSSJustify.SpaceBetween -> JustifyContent.SpaceBetween
-                    | CSSJustify.SpaceAround -> JustifyContent.SpaceAround
-                    | unexpected -> failwithf "unexpected JustifyContent: %A" unexpected
-            |> writer --
-                fun this (justify : JustifyContent) ->
-                    this.css.JustifyContent <-
-                    match justify with
-                    | JustifyContent.Start -> CSSJustify.FlexStart
-                    | JustifyContent.Center -> CSSJustify.Center
-                    | JustifyContent.End -> CSSJustify.FlexEnd
-                    | JustifyContent.SpaceBetween -> CSSJustify.SpaceBetween
-                    | JustifyContent.SpaceAround -> CSSJustify.SpaceAround
-
-            |> reader -- fun this -> this.css.AlignItems |> Convert.align |> AlignItems
-            |> writer -- fun this (AlignItems align) -> this.css.AlignItems <- Convert.align align
-
-
-            |> reader --
-                fun this ->
-                    match this.css.Wrap with
-                    | CSSWrap.NoWrap -> Wrap.NoWrap
-                    | CSSWrap.Wrap -> Wrap.Wrap
-                    | unexpected -> failwithf "unexpected Wrap: %A" unexpected
-            |> writer --
-                fun this (wrap : Wrap) ->
-                    this.css.Wrap <- 
-                    match wrap with
-                    | Wrap.NoWrap -> CSSWrap.NoWrap
-                    | Wrap.Wrap -> CSSWrap.Wrap
-
+            |> Layout.viewProperties (fun this -> this.css)
             |> materialize
 
         let mounter (this : View) (index:int) (nested : Control) = 
