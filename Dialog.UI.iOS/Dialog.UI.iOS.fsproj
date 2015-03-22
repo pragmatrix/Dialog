@@ -6,10 +6,10 @@
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
     <ProjectGuid>{69C0FB7A-C40C-4D4B-8691-A94622605B08}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Dialog.iOS</RootNamespace>
+    <RootNamespace>Dialog.UI.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>Dialog.iOS</AssemblyName>
-    <Name>Dialog.iOS</Name>
+    <AssemblyName>Dialog.UI.iOS</AssemblyName>
+    <Name>Dialog.UI.iOS</Name>
     <RestorePackages>true</RestorePackages>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
   </PropertyGroup>

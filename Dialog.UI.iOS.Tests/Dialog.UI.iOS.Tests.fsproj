@@ -6,10 +6,10 @@
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
     <ProjectGuid>{F0A9F55F-1554-44A9-8A2D-42AE154C07ED}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Dialog.iOS.UI.Tests</RootNamespace>
+    <RootNamespace>Dialog.UI.iOS.Tests</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>DialogiOSUITests</AssemblyName>
-    <Name>Dialog.iOS.UI.Tests</Name>
+    <AssemblyName>DialogUIiOSTests</AssemblyName>
+    <Name>Dialog.UI.iOS.Tests</Name>
     <SelectedDevice>iPad 2 iOS 8.2</SelectedDevice>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
@@ -147,8 +147,8 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Dialog.iOS\Dialog.iOS.fsproj">
-      <Name>Dialog.iOS</Name>
+    <ProjectReference Include="..\Dialog.UI.iOS\Dialog.UI.iOS.fsproj">
+      <Name>Dialog.UI.iOS</Name>
       <Project>{69C0FB7A-C40C-4D4B-8691-A94622605B08}</Project>
       <IsAppExtension>False</IsAppExtension>
     </ProjectReference>
