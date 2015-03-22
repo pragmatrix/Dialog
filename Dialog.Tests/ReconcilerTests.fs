@@ -31,7 +31,6 @@ type ReconcilerTests() =
 
         l |> List.ofSeq
 
-
     let reconcile next curl = 
         let cur = Dict.ofList curl
 
@@ -56,7 +55,6 @@ type ReconcilerTests() =
 
 
     let equals (expected : Trace list) (result : Trace list) = 
-        printfn "%A" result
         Assert.AreEqual (expected, result)
 
     [<Test>]
