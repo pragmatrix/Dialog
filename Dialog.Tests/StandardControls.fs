@@ -3,6 +3,7 @@
 open Dialog
 open Dialog.UI
 open System
+open Shared
 
 type Content = Content of Element
 type Label = Label of string

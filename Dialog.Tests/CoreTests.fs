@@ -1,12 +1,9 @@
-module ComponentTests
+module CoreTests
 
 open NUnit.Framework
 
 open Dialog
 open Dialog.Core
-
-
-
 
 type DummyComponent() =
     interface Component with

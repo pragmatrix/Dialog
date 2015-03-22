@@ -3,6 +3,8 @@
 open Dialog
 open Dialog.UI
 
+open Shared
+
 open System
 
 type Events = 

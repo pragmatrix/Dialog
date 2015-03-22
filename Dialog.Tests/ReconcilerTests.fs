@@ -2,16 +2,18 @@
 
 open NUnit.Framework
 
+open Shared
+
 open Dialog
 open Dialog.Core
 
 open Reconciler
+open Core.Printf
 
 type Trace = 
     | Insert of int * int * int
     | Update of int * int * int
     | Remove of int * int
-
 
 [<TestFixture>]
 type ReconcilerTests() =

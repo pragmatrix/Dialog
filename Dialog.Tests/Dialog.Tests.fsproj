@@ -49,8 +49,14 @@
   </Target>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Shared.fs" />
     <Compile Include="ReconcilerTests.fs" />
     <Compile Include="CoreTests.fs" />
+    <Compile Include="LayoutTests.fs" />
+    <Compile Include="ComponentTests.fs" />
+    <Compile Include="PopoverTests.fs" />
+    <Compile Include="InteractionTests.fs" />
+    <Compile Include="StandardControls.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

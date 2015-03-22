@@ -3,6 +3,8 @@
 open Dialog
 open Dialog.UI
 
+open Shared
+
 (*
     A view with an image button right next to it.
 *)

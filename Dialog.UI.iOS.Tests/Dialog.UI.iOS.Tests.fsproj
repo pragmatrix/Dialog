@@ -127,11 +127,6 @@
   <ItemGroup>
     <None Include="Info.plist" />
     <Compile Include="RootViewController.fs" />
-    <Compile Include="LayoutTests.fs" />
-    <Compile Include="ComponentTests.fs" />
-    <Compile Include="PopoverTests.fs" />
-    <Compile Include="InteractionTests.fs" />
-    <Compile Include="StandardControls.fs" />
     <Compile Include="AppDelegate.fs" />
     <Content Include="cloud-download.png" />
     <Content Include="packages.config" />
@@ -147,6 +142,11 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Dialog.Tests\Dialog.Tests.fsproj">
+      <Name>Dialog.Tests</Name>
+      <Project>{630c91f9-1186-43d1-8c8b-616b05993411}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Dialog.UI.iOS\Dialog.UI.iOS.fsproj">
       <Name>Dialog.UI.iOS</Name>
       <Project>{69C0FB7A-C40C-4D4B-8691-A94622605B08}</Project>
