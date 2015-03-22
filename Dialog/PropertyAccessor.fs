@@ -159,7 +159,7 @@ module PropertyAccessor =
         let enter (f: 'lense' -> 'lense) (this: PropertyAccessor<'target>, l: 'target -> 'lense') =
             this, l >> f
 
-        let reset (a, l) = a, id
+        let reset (a, _) = a, id
 
-        let store (a, l) = l
+        let store (_, l) = l
         let restore l (a, _) = a, l
