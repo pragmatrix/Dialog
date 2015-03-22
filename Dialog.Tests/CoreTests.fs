@@ -5,10 +5,14 @@ open NUnit.Framework
 open Dialog
 open Dialog.Core
 
+
+
+
 type DummyComponent() =
     interface Component with
-        member this.render() = service "" [] []
+        member this.render() = service (Define.ServiceRef("", Define.ServiceType(""))) [] []
         member this.dispatchEvent e = ()
+        member this.updateProperties p = ()
         member this.class' = unbox null
         member this.properties = []
 
