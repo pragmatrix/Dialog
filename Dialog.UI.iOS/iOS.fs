@@ -146,13 +146,15 @@ module iOS =
 
     let controlAccessor = 
         accessorFor<Control>
-        |> Layout.properties (fun this -> this.css)
+        |> Layout.properties -- fun this -> this.css
 
-        |> reader -- fun this -> this.view.Frame |> Convert.rect |> Frame
-        |> reader -- fun this -> IOSView this.view
+        |> Lense.enter -- fun this -> this.view
 
-        |> reader -- fun this -> this.view.BackgroundColor |> Convert.color |> BackgroundColor
-        |> writer -- fun this (BackgroundColor color) -> this.view.BackgroundColor <- Convert.color color
+        |> reader -- fun this -> this.Frame |> Convert.rect |> Frame
+        |> reader -- fun this -> IOSView this
+
+        |> reader -- fun this -> this.BackgroundColor |> Convert.color |> BackgroundColor
+        |> writer -- fun this (BackgroundColor color) -> this.BackgroundColor <- Convert.color color
                 
         |> materialize
 
@@ -232,7 +234,7 @@ module iOS =
         let buttonAccessor = 
             accessorFor<Control<UIButton>>
             |> extend controlAccessor
-            |> controlProperties (fun c -> c.view :> UIControl)
+            |> controlProperties -- fun c -> c.view :> UIControl
             |> fontProperties (fun c -> c.view.Font) (fun c f -> c.view.Font <- f)
             |> reader -- fun this -> this.view.Title(UIControlState.Normal) |> Text
             |> writer --
@@ -263,7 +265,7 @@ module iOS =
         let accessor = 
             accessorFor<Control<UISwitch>>
             |> extend controlAccessor
-            |> controlProperties (fun c -> c.view :> UIControl)
+            |> controlProperties -- fun c -> c.view :> UIControl
             |> reader -- fun this -> Switch.fromBoolean this.view.On
             |> writer -- fun this (sw:Switch) -> this.view.On <- sw.Boolean
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
@@ -287,7 +289,7 @@ module iOS =
         let accessor = 
             accessorFor<Control<UISlider>>
             |> extend controlAccessor
-            |> controlProperties (fun c -> c.view :> UIControl)
+            |> controlProperties -- fun c -> c.view :> UIControl
             |> reader -- fun this -> SliderValue (this.view.Value |> float)
             |> writer -- fun this (SliderValue v) -> this.view.Value <- v |> float32
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
@@ -332,7 +334,7 @@ module iOS =
         let accessor = 
             accessorFor<Control<UIStepper>>
             |> extend controlAccessor
-            |> controlProperties (fun c -> c.view :> UIControl)
+            |> controlProperties -- fun c -> c.view :> UIControl
 
             |> reader -- fun this -> this.view.MaximumValue |> Math.Round |> int |> Steps
             |> writer -- fun this (Steps steps) -> this.view.MaximumValue <- steps |> float
@@ -357,7 +359,7 @@ module iOS =
         let accessor = 
             accessorFor<Control<UISegmentedControl>>
             |> extend controlAccessor
-            |> controlProperties (fun c -> c.view :> UIControl)
+            |> controlProperties -- fun c -> c.view :> UIControl
 
             |> reader -- fun this ->
                 match int this.view.SelectedSegment with
