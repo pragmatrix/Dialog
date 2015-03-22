@@ -5,6 +5,7 @@ open Dialog.UI
 open Dialog.Services
 open Dialog.Scanners
 open Dialog.PropertyAccessor
+open Dialog.Layout
 
 open CoreGraphics
 open UIKit
@@ -13,6 +14,7 @@ open Facebook.CSSLayout
 
 open System
 open System.Collections.Generic
+
 
 module iOS =
 
@@ -35,22 +37,6 @@ module iOS =
             | _ ->
             let r, g, b, a = color.GetRGBA()
             { red = r |> float; green = g |> float; blue = b |> float; alpha = a |> float}
-
-        static member align align = 
-            match align with
-            | Align.Auto -> CSSAlign.Auto
-            | Align.Start -> CSSAlign.FlexStart
-            | Align.Center -> CSSAlign.Center
-            | Align.End -> CSSAlign.FlexEnd
-            | Align.Stretch -> CSSAlign.Stretch
-        static member align align = 
-            match align with
-            | CSSAlign.Auto -> Align.Auto
-            | CSSAlign.FlexStart -> Align.Start
-            | CSSAlign.Center -> Align.Center
-            | CSSAlign.FlexEnd -> Align.End
-            | CSSAlign.Stretch -> Align.Stretch
-            | unexpected -> failwithf "unexpected align: %A" unexpected
 
     type IOSView = IOSView of UIView
 
@@ -146,58 +132,29 @@ module iOS =
     let mkHandler handler = EventHandler handler
     let mkEvent target msg reference = { message = msg; props = []; sender = reference }
 
-    let private setSpacing spacing setter = 
-        setter(SpacingType.Left, spacing.left |> float32)
-        setter(SpacingType.Top, spacing.top |> float32)
-        setter(SpacingType.Right, spacing.right |> float32)
-        setter(SpacingType.Bottom, spacing.bottom |> float32)
-
-    let private getSpacing getter =
-        let left = getter(SpacingType.Left) |> float
-        let top = getter(SpacingType.Top) |> float
-        let right = getter(SpacingType.Right) |> float
-        let bottom = getter(SpacingType.Bottom) |> float
-        { Spacing.left = left; top = top; right = right; bottom = bottom }
-
     let controlProperties (get: 'a -> UIControl) accessor =
         accessor
-        |> reader -- fun this -> (get this).Enabled |> Activation.fromBoolean
-        |> writer -- fun this (e:Switch) -> (get this).Enabled <- e.Boolean
+        |> Lense.enter get
+        |> reader -- fun this -> this.Enabled |> Activation.fromBoolean
+        |> writer -- fun this (e:Switch) -> this.Enabled <- e.Boolean
+        |> Lense.reset
 
     let fontProperties (get: 'a -> UIFont) (set: 'a -> UIFont -> unit) accessor = 
         accessor
         |> reader -- fun this -> (get this).PointSize |> float |> FontSize
         |> writer -- fun this (FontSize s) -> set this ((get this).WithSize(nfloat s))
 
-
     let controlAccessor = 
         accessorFor<Control>
+        |> Layout.properties (fun this -> this.css)
+
         |> reader -- fun this -> this.view.Frame |> Convert.rect |> Frame
         |> reader -- fun this -> IOSView this.view
 
         |> reader -- fun this -> this.view.BackgroundColor |> Convert.color |> BackgroundColor
         |> writer -- fun this (BackgroundColor color) -> this.view.BackgroundColor <- Convert.color color
                 
-        |> reader -- fun this -> this.css.AlignSelf |> Convert.align |> AlignSelf
-        |> writer -- fun this (AlignSelf align) -> this.css.AlignSelf <- Convert.align align
-
-        |> reader -- fun this -> this.css.Flex |> float |> Flex
-        |> writer -- fun this (Flex f) -> this.css.Flex <- f |> float32
-
-        |> reader -- fun this -> getSpacing this.css.GetMargin |> Margin
-        |> writer -- fun this (Margin spacing) -> setSpacing spacing this.css.SetMargin
-
-        |> reader -- fun this -> getSpacing this.css.GetBorder |> Border
-        |> writer -- fun this (Border spacing) -> setSpacing spacing this.css.SetBorder
-
-        |> reader -- fun this -> getSpacing this.css.GetPadding |> Padding
-        |> writer -- fun this (Padding spacing) -> setSpacing spacing this.css.SetPadding
-
-        |> reader -- fun this -> this.css.StyleWidth |> float |> Width
-        |> writer -- fun this (Width width) -> this.css.StyleWidth <- width |> float32
-
-        |> reader -- fun this -> this.css.StyleHeight |> float |> Height
-        |> writer -- fun this (Height height) -> this.css.StyleHeight <- height |> float32
+        |> materialize
 
     let eventMounter f accessor = 
         accessor
@@ -238,7 +195,8 @@ module iOS =
             View(view, css)
 
         let viewAccessor = 
-            accessorFor<View>.extend controlAccessor
+            accessorFor<View>
+            |> extend controlAccessor
 
             |> reader -- 
                 fun this -> 
@@ -289,6 +247,7 @@ module iOS =
                     | Wrap.NoWrap -> CSSWrap.NoWrap
                     | Wrap.Wrap -> CSSWrap.Wrap
 
+            |> materialize
 
         let mounter (this : View) (index:int) (nested : Control) = 
             this.view.mountControl index nested
@@ -320,7 +279,8 @@ module iOS =
             control
 
         let buttonAccessor = 
-            accessorFor<Control<UIButton>>.extend controlAccessor
+            accessorFor<Control<UIButton>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
             |> fontProperties (fun c -> c.view.Font) (fun c f -> c.view.Font <- f)
             |> reader -- fun this -> this.view.Title(UIControlState.Normal) |> Text
@@ -336,6 +296,7 @@ module iOS =
                         this.view.SetImage(null, UIControlState.Normal)
 
             |> eventMounter -- fun this (OnClick e) -> e, this.view.TouchUpInside
+            |> materialize
 
         controlClassPrototype()
             .Constructor(constructor')
@@ -349,11 +310,13 @@ module iOS =
             control
 
         let accessor = 
-            accessorFor<Control<UISwitch>>.extend controlAccessor
+            accessorFor<Control<UISwitch>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
             |> reader -- fun this -> Switch.fromBoolean this.view.On
             |> writer -- fun this (sw:Switch) -> this.view.On <- sw.Boolean
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+            |> materialize
 
         controlClassPrototype()
             .Constructor(construct)
@@ -371,11 +334,13 @@ module iOS =
             control
 
         let accessor = 
-            accessorFor<Control<UISlider>>.extend controlAccessor
+            accessorFor<Control<UISlider>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
             |> reader -- fun this -> SliderValue (this.view.Value |> float)
             |> writer -- fun this (SliderValue v) -> this.view.Value <- v |> float32
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+            |> materialize
 
         controlClassPrototype()
             .Constructor(construct)
@@ -384,7 +349,8 @@ module iOS =
     let labelService =
 
         let labelAccessor = 
-            accessorFor<Control<UILabel>>.extend controlAccessor
+            accessorFor<Control<UILabel>>
+            |> extend controlAccessor
             |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
             |> reader -- fun this -> Text this.view.Text
             |> writer -- fun this (Text t) -> 
@@ -392,6 +358,7 @@ module iOS =
                 this.css.MarkDirty()
             |> reader -- fun this -> this.view.TextColor |> Convert.color |> TextColor
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
+            |> materialize
 
         let constructor'() = 
             let label = new UILabel()
@@ -412,7 +379,8 @@ module iOS =
             control
 
         let accessor = 
-            accessorFor<Control<UIStepper>>.extend controlAccessor
+            accessorFor<Control<UIStepper>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
 
             |> reader -- fun this -> this.view.MaximumValue |> Math.Round |> int |> Steps
@@ -422,6 +390,7 @@ module iOS =
             |> writer -- fun this (StepperValue v) -> this.view.Value <- v |> float
 
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+            |> materialize
 
         controlClassPrototype()
             .Constructor(construct)
@@ -435,7 +404,8 @@ module iOS =
             control
 
         let accessor = 
-            accessorFor<Control<UISegmentedControl>>.extend controlAccessor
+            accessorFor<Control<UISegmentedControl>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
 
             |> reader -- fun this ->
@@ -472,6 +442,7 @@ module iOS =
                     this.view.RemoveSegmentAtIndex(nint i, true)
 
             |> eventMounter -- fun this (OnChanged e) -> e, this.view.ValueChanged
+            |> materialize
 
         controlClassPrototype()
             .Constructor(construct)
@@ -489,7 +460,8 @@ module iOS =
             control
 
         let accessor =
-            accessorFor<Control<UITextField>>.extend controlAccessor
+            accessorFor<Control<UITextField>>
+            |> extend controlAccessor
             |> controlProperties (fun c -> c.view :> UIControl)
 
             |> reader -- fun this -> this.view.Text |> Text
@@ -506,6 +478,7 @@ module iOS =
             |> eventMounter -- fun this (OnChanged e) -> 
                 this.css.MarkDirty()
                 e, this.view.ValueChanged
+            |> materialize
 
         controlClassPrototype()
             .Constructor(construct)
@@ -514,12 +487,14 @@ module iOS =
     let imageService = 
 
         let accessor =
-            accessorFor<Control<UIImageView>>.extend controlAccessor
+            accessorFor<Control<UIImageView>>
+            |> extend controlAccessor
             |> mounter --
                 fun this (source:Source) ->
                     this.view.Image <- loadImage source
                     fun () ->
                         this.view.Image <- null
+            |> materialize
 
         let constructor'() =
             let image = new UIImageView()
@@ -613,6 +588,7 @@ module iOS =
                     fun () -> 
                     this.anchor <- None
             |> eventMounter -- fun this (OnDismissed d) -> d, this.controller.DidDismiss
+            |> materialize
 
         let constructor'() = 
             new Popover()

@@ -73,7 +73,7 @@ module Services =
             { 
                 constructor' = fun () -> failwith "not implemented"; 
                 destructor = fun _ -> (); 
-                propertyAccessor = PropertyAccessor.accessorFor; 
+                propertyAccessor = PropertyAccessor.accessorFor |> PropertyAccessor.materialize; 
                 nestingAdapter = NestingAdapter<_>.agnostic();
                 scanner = Scanners.dontScan;
                 updateNotifier = fun _ -> ();

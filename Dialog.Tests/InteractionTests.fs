@@ -8,7 +8,7 @@ open Shared
 open System
 
 type Events = 
-    | SliderChanged
+    | ValueChanged
     | MinimumChanged
     | MaximumChanged
 
@@ -23,7 +23,7 @@ let rangeLimitedSlider =
             { this.state with minimum = Math.Min(this.state.maximum, e.sender.get(fun (SliderValue v) -> v))}
         | MaximumChanged ->
             { this.state with maximum = Math.Max(this.state.minimum, e.sender.get(fun (SliderValue v) -> v))}
-        | SliderChanged ->
+        | ValueChanged ->
             { this.state with slider = e.sender.get(function SliderValue v -> v) }
 
     let render this = 
@@ -42,7 +42,7 @@ let rangeLimitedSlider =
             label (sprintf "maximum: %g" maximum) []
             slider maximum (this, MaximumChanged) []
             label (sprintf "value: %g" value) []
-            slider value (this, SliderChanged) []
+            slider value (this, ValueChanged) []
         ] [AlignItems.Center; JustifyContent.Center; BackgroundColor Color.White]
 
     Define.Component()

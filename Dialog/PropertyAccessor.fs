@@ -1,11 +1,7 @@
 ﻿namespace Dialog
 
 (* 
-    A PropertyAccessor defines property modification functions for a specific target.
-
-    todo:
-        - use Dictionaries instead of maps for performance
-        - default values should also be set when the target is instantiated.
+    A PropertyAccessor defines property modification functions for an implementation type.
 *)
 
 module Map = 
@@ -127,29 +123,43 @@ module PropertyAccessor =
 
     let inline ( -- ) l r = l r
 
-    let accessorFor<'target> : PropertyAccessor<'target> = 
-        { readers = Map.empty; mounters = Map.empty; writers = Map.empty }
+    let accessorFor<'target> : (PropertyAccessor<'target> * ('target -> 'target)) = 
+        { readers = Map.empty; mounters = Map.empty; writers = Map.empty }, id
 
     // reader
 
-    let reader (f: 'target -> 'property) (this: PropertyAccessor<'target>) =
+    let reader (f: 'lense -> 'property) (this: PropertyAccessor<'target>, l: 'target -> 'lense) =
         let name = typedefof<'property>.Name
-        let reader target = f target |> box
-        { this with readers = this.readers.Add(name, reader) }
+        let reader target = (l >> f) target |> box
+        { this with readers = this.readers.Add(name, reader) }, l
 
     // modifications
 
-    let mounter (f: 'target -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>) = 
+    let mounter (f: 'lense -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>, l: 'target -> 'lense) = 
         let name = typedefof<'property>.Name
-        let mounter target reference property = f target (unbox property)
-        { this with mounters = this.mounters.Add(name, mounter) }
+        let mounter target reference property = (l >> f) target (unbox property)
+        { this with mounters = this.mounters.Add(name, mounter) }, l
 
-    let eventMounter (f: 'target -> Reference -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>) = 
+    let eventMounter (f: 'lense -> Reference -> 'property -> (unit -> unit)) (this: PropertyAccessor<'target>, l: 'target -> 'lense) = 
         let name = typedefof<'property>.Name
-        let mounter target reference property = f target reference (unbox property)
-        { this with mounters = this.mounters.Add(name, mounter) }
+        let mounter target reference property = (l >> f) target reference (unbox property)
+        { this with mounters = this.mounters.Add(name, mounter) }, l
     
-    let writer (f: 'target -> 'property -> unit) (this: PropertyAccessor<'target>) = 
+    let writer (f: 'lense -> 'property -> unit) (this: PropertyAccessor<'target>, l: 'target -> 'lense) = 
         let name = typedefof<'property>.Name
-        let writer target property = f target (unbox property)
-        { this with writers = this.writers.Add(name, writer) }
+        let writer target property = (l >> f) target (unbox property)
+        { this with writers = this.writers.Add(name, writer) }, l
+
+    let extend (parent: PropertyAccessor<'parent>) (this: PropertyAccessor<'target>, l: 'target -> 'lense) =
+        this.extend parent, l
+
+    let materialize = fst
+
+    module Lense = 
+        let enter (f: 'lense' -> 'lense) (this: PropertyAccessor<'target>, l: 'target -> 'lense') =
+            this, l >> f
+
+        let reset (a, l) = a, id
+
+        let store (a, l) = l
+        let restore l (a, _) = a, l
