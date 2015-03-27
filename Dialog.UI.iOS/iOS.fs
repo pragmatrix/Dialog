@@ -1,5 +1,7 @@
 ﻿namespace Dialog.UI
 
+open System
+
 open Dialog
 open Dialog.UI
 open Dialog.Services
@@ -7,14 +9,10 @@ open Dialog.Scanners
 open Dialog.PropertyAccessor
 open Dialog.Layout
 
-open CoreGraphics
-open UIKit
-
 open Facebook.CSSLayout
 
-open System
-open System.Collections.Generic
-
+open CoreGraphics
+open UIKit
 
 module iOS =
 
@@ -29,8 +27,12 @@ module iOS =
         static member toSize (width:float, height:float) =
             CGSize(nf width, nf height)
 
+        static member size (size: CGSize) =
+            (size.Width |> float, size.Height |> float)
+
         static member color color = 
             new UIColor(nfloat(color.red), nfloat(color.green), nfloat(color.blue), nfloat(color.alpha))
+
         static member color (color:UIColor) = 
             match color with
             | null -> Color.Transparent
@@ -39,95 +41,44 @@ module iOS =
             { red = r |> float; green = g |> float; blue = b |> float; alpha = a |> float}
 
     type IOSView = IOSView of UIView
+        
+    let mkLayout (view: UIView) =
+        let setFrame (r:Rect) = UIView.PerformWithoutAnimation(fun () -> view.Frame <- Convert.rect r)
+        Layout(setFrame)
+        
+    type Control(view: UIView, layout: Layout) = 
+        let _layout = layout
 
-    type Control(view: UIView, css: CSSNode) = 
         member this.view = view
-        member this.css = css
-        abstract member updateCSS: unit -> unit
-
-        default this.updateCSS() = 
-            if (not css.HasNewLayout) then ()
-            else
-            let left = css.LayoutX
-            let top = css.LayoutY
-            let width = css.LayoutWidth
-            let height = css.LayoutHeight
-            let frame = CGRect(nfloat(left), nfloat(top), nfloat(width), nfloat(height))
-            UIView.PerformWithoutAnimation(fun () -> view.Frame <- frame);
-            css.MarkLayoutSeen()
-
+        member this.layout = _layout
         member this.useSizeThatFits() =
-            this.css.MeasureFunction <-
-                fun node width ->
-                    let sz = this.view.SizeThatFits(new CGSize(nfloat width, nfloat 0.0))
-                    MeasureOutput(sz.Width |> float32, sz.Height |> float32)
+            let layoutFunction width = 
+                this.view.SizeThatFits(CGSize(nf width, nf 0.0)) 
+                |> Convert.size
 
-        member this.minimumSize(width, height) = 
-            this.css.MeasureFunction <-
-                fun _ _ ->
-                    MeasureOutput(width |> float32, height |> float32)
+            this.layout.setMeasure (SizeThatFits layoutFunction)
 
-    type Control<'view when 'view :> UIView>(view: 'view, css: CSSNode) = 
-        inherit Control(view, css)
+    type Control<'view when 'view :> UIView>(view: 'view, layout : Layout) = 
+        inherit Control(view, layout)
         member this.view = view
 
-
-    type UICSSLayoutView(css: CSSNode) =
+    type UILayoutView() as this =
         inherit UIView()
 
-        let controls = HashSet<Control>()
+        let _layout = mkLayout this
 
-        let mutable _preferredSize = (0., 0.)
-
-        member this.calculatePreferredSize() = 
-
-            css.StyleWidth <- CSSConstants.Undefined
-            css.StyleHeight <- CSSConstants.Undefined
-
-            if (css.IsDirty) then
-                css.CalculateLayout()
-                if css.HasNewLayout then
-                    _preferredSize <- css.LayoutWidth |> float, css.LayoutHeight |> float
-                    css.MarkLayoutSeen()
-            
-            _preferredSize
+        member this.layout = _layout
 
         override this.LayoutSubviews() = 
-
-            if (css.Parent <> null) then ()
-            else
-            let bounds = this.Bounds
-            css.StyleWidth <- bounds.Width |> float32
-            css.StyleHeight <- bounds.Height |> float32
-
-            if (not css.IsDirty) then 
-                ()
-            else
-
-            css.CalculateLayout()
-            if (not css.HasNewLayout) then ()
-            else
-            this.updateCSS()
-            css.MarkLayoutSeen()
-
-        member this.updateCSS() =
-            controls |> Seq.iter (fun ctrl -> ctrl.updateCSS())
+            _layout.layoutNested(this.Bounds.Size |> Convert.size)
             
         member this.mountControl index (control: Control) =
-            css.InsertChild(index, control.css)
+            _layout.insertNested index control.layout
             this.InsertSubview(control.view, nint(index))
-            controls.Add control |> ignore
 
         member this.unmountControl (control: Control) = 
-            controls.Remove control |> ignore
             control.view.RemoveFromSuperview()
-            control.css.RemoveSelf()            
-
-    type View(view: UICSSLayoutView, css:CSSNode) = 
-        inherit Control<UICSSLayoutView>(view, css)
-        override this.updateCSS() =
-            base.updateCSS()
-            view.updateCSS()
+            _layout.removeNested control.layout
 
     let mkHandler handler = EventHandler handler
     let mkEvent target msg reference = { message = msg; props = []; sender = reference }
@@ -146,7 +97,7 @@ module iOS =
 
     let controlAccessor = 
         accessorFor<Control>
-        |> Layout.properties -- fun this -> this.css
+        |> Layout.properties -- fun this -> this.layout :> CSSNode
 
         |> Lense.enter -- fun this -> this.view
 
@@ -171,8 +122,7 @@ module iOS =
         v.view.RemoveFromSuperview()
         v.view.Dispose()
 
-    let createControl view = 
-        Control<_>(view, CSSNode())
+    let createControl view = Control<_>(view, mkLayout view)
     
     let controlClassPrototype() = 
         Define.Service()
@@ -192,20 +142,19 @@ module iOS =
     let viewService = 
         
         let constructor'() = 
-            let css = CSSNode()
-            let view = new UICSSLayoutView(css)
-            View(view, css)
+            let view = new UILayoutView()
+            Control<_>(view, view.layout)
 
         let viewAccessor = 
-            accessorFor<View>
+            accessorFor<Control<UILayoutView>>
             |> extend controlAccessor
-            |> Layout.viewProperties (fun this -> this.css)
+            |> Layout.viewProperties (fun this -> this.layout :> CSSNode)
             |> materialize
 
-        let mounter (this : View) (index:int) (nested : Control) = 
+        let mounter (this : Control<UILayoutView>) (index:int) (nested : Control) = 
             this.view.mountControl index nested
 
-        let unmounter (this : View) (nested : Control) = 
+        let unmounter (this : Control<UILayoutView>) (nested : Control) = 
             this.view.unmountControl nested
 
         controlClassPrototype()
@@ -240,7 +189,7 @@ module iOS =
             |> writer --
                 fun this (Text t) ->
                     UIView.PerformWithoutAnimation (fun _ -> this.view.SetTitle(t, UIControlState.Normal))
-                    this.css.MarkDirty()
+                    this.layout.MarkDirty()
 
             |> mounter --
                 fun this (Image source) ->
@@ -283,7 +232,7 @@ module iOS =
         let construct() = 
             let slider = new UISlider()
             let control = createControl slider
-            control.minimumSize(sliderDefaultSize)
+            control.layout.setMeasure (MinimumSize sliderDefaultSize)
             control
 
         let accessor = 
@@ -308,7 +257,7 @@ module iOS =
             |> reader -- fun this -> Text this.view.Text
             |> writer -- fun this (Text t) -> 
                 this.view.Text <- t
-                this.css.MarkDirty()
+                this.layout.MarkDirty()
             |> reader -- fun this -> this.view.TextColor |> Convert.color |> TextColor
             |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
             |> materialize
@@ -420,7 +369,7 @@ module iOS =
             |> reader -- fun this -> this.view.Text |> Text
             |> writer -- fun this (Text t) -> 
                 this.view.Text <- t
-                this.css.MarkDirty()
+                this.layout.MarkDirty()
 
             |> mounter -- 
                 fun this Secure -> 
@@ -429,7 +378,7 @@ module iOS =
 
             |> eventMounter -- fun this (OnCompleted e) -> e, this.view.Ended
             |> eventMounter -- fun this (OnChanged e) -> 
-                this.css.MarkDirty()
+                this.layout.MarkDirty()
                 e, this.view.ValueChanged
             |> materialize
 
@@ -460,15 +409,14 @@ module iOS =
             .PropertyAccessor(accessor)
 
     type ViewController() = 
-        let _css = new CSSNode()
-        let _rootView = new UICSSLayoutView(_css)
+        let _rootView = new UILayoutView()
         let _controller = new UIViewController()
         
         do
             _controller.View <- _rootView
 
         member this.updateLayout() =
-            let preferred = _rootView.calculatePreferredSize()
+            let preferred = _rootView.layout.calculatePreferredSize()
             _controller.PreferredContentSize <- Convert.toSize preferred
 
         with
@@ -491,8 +439,7 @@ module iOS =
             .UpdateNotifier(fun p -> p.updateLayout())
 
     type Popover() = 
-        let _css = new CSSNode()
-        let _rootView = new UICSSLayoutView(_css)
+        let _rootView = new UILayoutView()
         let _contained = new UIViewController()
         let _controller = new UIPopoverController(_contained)
         do
@@ -501,7 +448,7 @@ module iOS =
         member val anchor : Reference option = None with get, set
 
         member this.updateLayout() =
-            let preferred = _rootView.calculatePreferredSize()
+            let preferred = _rootView.layout.calculatePreferredSize()
             _contained.PreferredContentSize <- Convert.toSize preferred
 
         interface MountingNotifications with
@@ -512,7 +459,7 @@ module iOS =
                 let refFrame = ref.get (function Frame f -> f)
                 let refView = ref.get (function IOSView v -> v)
 
-                let preferred = _rootView.calculatePreferredSize()
+                let preferred = _rootView.layout.calculatePreferredSize()
                 _contained.PreferredContentSize <- Convert.toSize preferred
                 let localFrame = { left = 0.; top = 0.; width = refFrame.width; height = refFrame.height }
             

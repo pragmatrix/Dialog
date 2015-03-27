@@ -125,3 +125,79 @@ module Layout =
                 | Wrap.Wrap -> CSSWrap.Wrap
 
         |> Lense.restore stored
+
+
+    type Measure = 
+        | SizeThatFits of (float -> float * float)
+        | MinimumSize of float * float
+
+    type Layout(setFrame: Rect -> unit) =
+        inherit CSSNode()
+
+        let mutable _preferredSize = (0., 0.)
+
+        member this.calculatePreferredSize() = 
+
+            this.StyleWidth <- CSSConstants.Undefined
+            this.StyleHeight <- CSSConstants.Undefined
+
+            if (this.IsDirty) then
+                this.CalculateLayout()
+                if this.HasNewLayout then
+                    _preferredSize <- this.LayoutWidth |> float, this.LayoutHeight |> float
+                    this.MarkLayoutSeen()
+            
+            _preferredSize
+
+        member this.updateTarget() = 
+            if not this.HasNewLayout then ()
+            else
+
+            let left = this.LayoutX |> float
+            let top = this.LayoutY |> float
+            let width = this.LayoutWidth |> float
+            let height = this.LayoutHeight |> float
+            setFrame {left = left; top = top; width = width; height = height }
+            this.MarkLayoutSeen()
+
+            this.updateNested()
+
+        member this.updateNested() = 
+            this.Children |> Seq.iter (fun c -> (c :?> Layout).updateTarget())
+
+        member this.layoutNested(width : float, height: float) = 
+        
+            if (this.Parent <> null) then () 
+            else
+
+            this.StyleWidth <- width |> float32
+            this.StyleHeight <- height |> float32
+
+            if (not this.IsDirty) then ()
+            else
+
+            this.CalculateLayout()
+            if (not this.HasNewLayout) then ()
+            else
+            this.updateNested()
+            this.MarkLayoutSeen()
+
+        member this.insertNested index layout = 
+            this.InsertChild(index, layout :> CSSNode)
+
+        member this.removeNested (layout : Layout) = 
+            layout.RemoveSelf()
+            
+        member this.setMeasure measure' = 
+            match measure' with
+            | SizeThatFits sizeOfWidth ->
+                this.MeasureFunction <- 
+                fun _ width ->
+                    let (w, h) = sizeOfWidth (width |> float)
+                    MeasureOutput(w |> float32, h |> float32)
+            | MinimumSize (width, height) ->
+                this.MeasureFunction <-
+                fun _ _ ->
+                    MeasureOutput(width |> float32, height |> float32)
+
+            
