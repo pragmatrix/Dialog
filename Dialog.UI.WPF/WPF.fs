@@ -21,6 +21,7 @@ module WPF =
         static member size (sz: Size) = sz.Width, sz.Height
         static member toSize (width, height) = Size(width, height)
         static member rect (left, top, width, height) = { left = left; top = top; width = width; height = height }
+        static member rect (r: UI.Rect) = Rect(r.left, r.top, r.width, r.height)
         static member color (brush: Media.Brush) = 
             match brush with
             | null -> Color.Transparent
@@ -42,7 +43,6 @@ module WPF =
     
     let mkLayout (element : FrameworkElement) =
         let setFrame (r:UI.Rect) =
-            (sprintf "rect: %A at %A" r element) |> Tracer.trace
             Canvas.SetLeft(element, r.left)
             Canvas.SetTop(element, r.top)
             element.Width <- r.width
@@ -170,15 +170,28 @@ module WPF =
 
     let controlClassPrototype() = Define.Service()
 
+    let mkTextBlock str = 
+        let tb = TextBlock();
+        TextOptions.SetTextFormattingMode(tb, TextFormattingMode.Display)
+        TextOptions.SetTextRenderingMode(tb, TextRenderingMode.Aliased)
+        tb.Text <- str
+        tb
+
+    let extractText (o:obj) = 
+        match o with
+        | :? TextBlock as tb -> tb.Text
+        | null -> ""
+        | str -> str.ToString()
+
     let labelService =
 
         let labelAccessor = 
             accessorFor<Control<Label>>
             |> extend controlAccessor
             |> fontProperties (fun c -> c.element :> Controls.Control)
-            |> reader -- fun this -> this.element.Content |> Convert.obj2string |> Text
+            |> reader -- fun this -> this.element.Content |> extractText |> Text
             |> writer -- fun this (Text t) -> 
-                this.element.Content <- t
+                this.element.Content <- mkTextBlock t
                 this.layout.MarkDirty()
             |> reader -- fun this -> this.element.Foreground |> Convert.color |> TextColor
             |> writer -- fun this (TextColor c) -> this.element.Foreground <- Convert.toBrush c
@@ -186,6 +199,7 @@ module WPF =
 
         let constructor'() = 
             let label = Label()
+
             let control = createControl label
             control.useSizeThatFits()
             control
@@ -230,10 +244,10 @@ module WPF =
             |> extend controlAccessor
             |> controlProperties -- fun c -> c.element :> FrameworkElement
             |> fontProperties (fun c -> c.element :> Controls.Control)
-            |> reader -- fun this -> this.element.Content |> Convert.obj2string |> Text
+            |> reader -- fun this -> this.element.Content |> extractText |> Text
             |> writer --
                 fun this (Text t) ->
-                    this.element.Content <- t
+                    this.element.Content <- mkTextBlock t
                     this.layout.MarkDirty()
 
             |> mounter --
