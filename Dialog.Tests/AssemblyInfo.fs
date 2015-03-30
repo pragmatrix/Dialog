@@ -1,4 +1,4 @@
-﻿module Dialog.iOS.Tests.AssemblyInfo
+﻿module Dialog.Tests.AssemblyInfo
 open System.Reflection
 
 [<assembly: AssemblyTitle("Dialog.Tests")>]

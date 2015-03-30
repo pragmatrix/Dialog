@@ -1,4 +1,4 @@
-﻿module LayoutTests
+﻿module Dialog.Tests.LayoutTests
 
 open Dialog
 open Dialog.UI

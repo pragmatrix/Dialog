@@ -6,6 +6,7 @@ open Foundation
 open Dialog
 open Dialog.UI.iOS
 open Dialog.Core
+open Dialog.Tests
 
 open LayoutTests
 open PopoverTests

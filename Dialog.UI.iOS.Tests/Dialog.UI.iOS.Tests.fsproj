@@ -128,8 +128,8 @@
     <None Include="Info.plist" />
     <Compile Include="RootViewController.fs" />
     <Compile Include="AppDelegate.fs" />
-    <Content Include="cloud-download.png" />
     <Content Include="packages.config" />
+    <Content Include="cloud-download.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Facebook.CSSLayout">

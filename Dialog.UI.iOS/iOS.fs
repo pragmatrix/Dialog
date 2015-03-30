@@ -106,7 +106,7 @@ module iOS =
 
         |> reader -- fun this -> this.BackgroundColor |> Convert.color |> BackgroundColor
         |> writer -- fun this (BackgroundColor color) -> this.BackgroundColor <- Convert.color color
-                
+                            
         |> materialize
 
     let eventMounter f accessor = 
@@ -128,17 +128,6 @@ module iOS =
         Define.Service()
             .Destructor(controlDisposer)
     
-    let nestedControlScanner = 
-
-        let isControlType = (=) controlType
-
-        let typeTester t = 
-            match isControlType t with
-            | true -> Include
-            | false -> Skip
-
-        recursiveNativeTypeScanner typeTester
-
     let viewService = 
         
         let constructor'() = 
@@ -162,7 +151,6 @@ module iOS =
             .Scanner(nestedControlScanner)
             .NestingAdapter(mounter, unmounter)
             .PropertyAccessor(viewAccessor)
-            .Destructor(controlDisposer)
         
     let private loadImage source =
         match source with
@@ -171,6 +159,52 @@ module iOS =
             match img with
             | null -> failwithf "failed to load image %A from bundle" source
             | _ -> img
+
+    let labelService =
+
+        let labelAccessor = 
+            accessorFor<Control<UILabel>>
+            |> extend controlAccessor
+            |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
+            |> reader -- fun this -> Text this.view.Text
+            |> writer -- fun this (Text t) -> 
+                this.view.Text <- t
+                this.layout.MarkDirty()
+            |> reader -- fun this -> this.view.TextColor |> Convert.color |> TextColor
+            |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
+            |> materialize
+
+        let constructor'() = 
+            let label = new UILabel()
+            let control = createControl label
+            control.useSizeThatFits()
+            control
+
+        controlClassPrototype()
+            .Constructor(constructor')
+            .PropertyAccessor(labelAccessor)
+
+    let imageService = 
+
+        let accessor =
+            accessorFor<Control<UIImageView>>
+            |> extend controlAccessor
+            |> mounter --
+                fun this (source:Source) ->
+                    this.view.Image <- loadImage source
+                    fun () ->
+                        this.view.Image <- null
+            |> materialize
+
+        let constructor'() =
+            let image = new UIImageView()
+            let control = createControl image
+            control.useSizeThatFits()
+            control
+
+        controlClassPrototype()
+            .Constructor(constructor')
+            .PropertyAccessor(accessor)
 
     let buttonService = 
 
@@ -247,31 +281,6 @@ module iOS =
         controlClassPrototype()
             .Constructor(construct)
             .PropertyAccessor(accessor)
-
-    let labelService =
-
-        let labelAccessor = 
-            accessorFor<Control<UILabel>>
-            |> extend controlAccessor
-            |> fontProperties (fun this -> this.view.Font) (fun this f -> this.view.Font <- f)
-            |> reader -- fun this -> Text this.view.Text
-            |> writer -- fun this (Text t) -> 
-                this.view.Text <- t
-                this.layout.MarkDirty()
-            |> reader -- fun this -> this.view.TextColor |> Convert.color |> TextColor
-            |> writer -- fun this (TextColor c) -> this.view.TextColor <- Convert.color c
-            |> materialize
-
-        let constructor'() = 
-            let label = new UILabel()
-            let control = createControl label
-            control.useSizeThatFits()
-            control
-
-        controlClassPrototype()
-            .Constructor(constructor')
-            .PropertyAccessor(labelAccessor)
-
 
     let stepperService = 
         let construct() = 
@@ -386,28 +395,6 @@ module iOS =
             .Constructor(construct)
             .PropertyAccessor(accessor)
         
-    let imageService = 
-
-        let accessor =
-            accessorFor<Control<UIImageView>>
-            |> extend controlAccessor
-            |> mounter --
-                fun this (source:Source) ->
-                    this.view.Image <- loadImage source
-                    fun () ->
-                        this.view.Image <- null
-            |> materialize
-
-        let constructor'() =
-            let image = new UIImageView()
-            let control = createControl image
-            control.useSizeThatFits()
-            control
-
-        controlClassPrototype()
-            .Constructor(constructor')
-            .PropertyAccessor(accessor)
-
     type ViewController() = 
         let _rootView = new UILayoutView()
         let _controller = new UIViewController()
@@ -534,7 +521,10 @@ module iOS =
             let frame = CGRect(nfloat(0.0), nfloat(0.0), nfloat(this.Frame.Width |> float), nfloat(this.Frame.Height |> float))
             ourView.Frame <- frame
 
-    let renderAsView element = 
+    let ensureModuleIsInitialized = (do ()); ()
+
+    let renderAsView element =
+        ensureModuleIsInitialized 
         let constructor'() = new UIRootView()
 
         let mountView (view : UIRootView) index (control:Control) = 
@@ -561,6 +551,7 @@ module iOS =
         viewService.instance :> UIView
 
     let renderAsViewController element = 
+        ensureModuleIsInitialized
 
         let controllerService = 
             controllerService.Instantiate ("rootController", "/") []

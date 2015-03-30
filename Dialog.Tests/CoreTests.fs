@@ -1,4 +1,4 @@
-module CoreTests
+module Dialog.Tests.CoreTests
 
 open NUnit.Framework
 

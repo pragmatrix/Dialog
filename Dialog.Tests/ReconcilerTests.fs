@@ -1,4 +1,4 @@
-﻿module ReconcilerTests
+﻿module Dialog.Tests.ReconcilerTests
 
 open NUnit.Framework
 

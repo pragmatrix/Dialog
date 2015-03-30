@@ -1,4 +1,4 @@
-﻿module ComponentTests
+﻿module Dialog.Tests.ComponentTests
 
 open Dialog
 open Dialog.UI

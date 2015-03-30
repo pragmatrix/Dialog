@@ -1,4 +1,4 @@
-﻿module PopoverTests
+﻿module Dialog.Tests.PopoverTests
 
 open Dialog
 open Dialog.UI

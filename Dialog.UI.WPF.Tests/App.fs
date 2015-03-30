@@ -1,9 +1,15 @@
-﻿module Dialog.Tests.StandardControls
+﻿module main
+
+open System
+open FsXaml
 
 open Dialog
 open Dialog.UI
-open System
-open Shared
+open Dialog.Tests
+
+
+type App = XAML<"App.xaml">
+type MainWindow = XAML<"MainWindow.xaml", true>
 
 type Content = Content of Element
 type Label = Label of string
@@ -65,6 +71,7 @@ let standardControls =
                 present "image" image
                 group "controls"
                 present "button" button
+(*
                 present "imageButton" imageButton
                 present "switch" switch
                 present "slider" slider
@@ -73,6 +80,7 @@ let standardControls =
                 group "text"
                 present "entry" entryNormal
                 present "entry Secure" entrySecure
+*)
             ] [Width 300.]
         ] [BackgroundColor Color.White; AlignItems.Center; JustifyContent.Center]
 
@@ -82,6 +90,15 @@ let standardControls =
         .Update(update)
         .Render(render)
 
+[<STAThread>]
+[<EntryPoint>]
+let main argv =
 
+    let root = App().Root
+    let window = MainWindow().Root
 
+    let test = standardControls
 
+    window.Content <- WPF.renderAsElement (render test [])
+
+    root.Run(window)

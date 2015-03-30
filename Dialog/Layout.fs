@@ -1,6 +1,7 @@
 ﻿namespace Dialog
 
 open Dialog.UI
+open Dialog.Scanners
 
 open Facebook.CSSLayout
 open PropertyAccessor
@@ -200,4 +201,13 @@ module Layout =
                 fun _ _ ->
                     MeasureOutput(width |> float32, height |> float32)
 
-            
+    let nestedControlScanner = 
+
+        let isControlType = (=) controlType
+
+        let typeTester t = 
+            match isControlType t with
+            | true -> Include
+            | false -> Skip
+
+        Services.recursiveNativeTypeScanner typeTester

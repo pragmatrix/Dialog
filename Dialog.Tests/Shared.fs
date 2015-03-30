@@ -1,4 +1,4 @@
-﻿module Shared
+﻿module Dialog.Tests.Shared
 
 open Core.Printf
 

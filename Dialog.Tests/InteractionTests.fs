@@ -1,4 +1,4 @@
-﻿module InteractionTests
+﻿module Dialog.Tests.InteractionTests
 
 open Dialog
 open Dialog.UI
