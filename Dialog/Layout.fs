@@ -61,11 +61,11 @@ module Layout =
         |> reader -- fun this -> getSpacing this.GetPadding |> Padding
         |> writer -- fun this (Padding spacing) -> setSpacing spacing this.SetPadding
 
-        |> reader -- fun this -> this.StyleWidth |> float |> Width
-        |> writer -- fun this (Width width) -> this.StyleWidth <- width |> float32
+        |> reader -- fun this -> this.Width |> float |> Width
+        |> writer -- fun this (Width width) -> this.Width <- width |> float32
 
-        |> reader -- fun this -> this.StyleHeight |> float |> Height
-        |> writer -- fun this (Height height) -> this.StyleHeight <- height |> float32
+        |> reader -- fun this -> this.Height |> float |> Height
+        |> writer -- fun this (Height height) -> this.Height <- height |> float32
 
         |> Lense.restore stored
 
@@ -139,8 +139,8 @@ module Layout =
 
         member this.calculatePreferredSize() = 
 
-            this.StyleWidth <- CSSConstants.Undefined
-            this.StyleHeight <- CSSConstants.Undefined
+            this.Width <- CSSConstants.Undefined
+            this.Height <- CSSConstants.Undefined
 
             if (this.IsDirty) then
                 this.CalculateLayout()
@@ -171,8 +171,8 @@ module Layout =
             if (this.Parent <> null) then () 
             else
 
-            this.StyleWidth <- width |> float32
-            this.StyleHeight <- height |> float32
+            this.Width <- width |> float32
+            this.Height <- height |> float32
 
             if (not this.IsDirty) then ()
             else

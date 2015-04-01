@@ -199,7 +199,6 @@ module WPF =
 
         let constructor'() = 
             let label = Label()
-
             let control = createControl label
             control.useSizeThatFits()
             control
