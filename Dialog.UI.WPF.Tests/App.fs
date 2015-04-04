@@ -54,7 +54,7 @@ let standardControls =
         let image = image imageSource [Width 30.; Height 30.]
 
         let button = button "Button" (this, Event) []
-        let imageButton = imageButton imageSource (this, Event) [Width 30.; Height 30.]
+        let imageButton = imageButton imageSource (this, Event) [ContentSize(30., 30.)]
         let switch = switch On (this, Event) []
         let slider = slider this.state (this, SliderChanged) []
         let newStepperValue = (this.state * 100. |> Math.Round |> int)
@@ -71,8 +71,8 @@ let standardControls =
                 present "image" image
                 group "controls"
                 present "button" button
-(*
                 present "imageButton" imageButton
+(*
                 present "switch" switch
                 present "slider" slider
                 present "stepper" stepper

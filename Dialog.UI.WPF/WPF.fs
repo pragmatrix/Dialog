@@ -55,12 +55,20 @@ module WPF =
 
         member this.element = element
         member this.layout = _layout
-        member this.useSizeThatFits() = 
+        member self.useSizeThatFits() = 
             let layoutFunction width = 
                 let width = if Double.IsNaN(width) then Double.PositiveInfinity else width
-                this.element.Measure(Size(width, Double.PositiveInfinity))
-                this.element.DesiredSize |> Convert.size
-            this.layout.setMeasure (SizeThatFits layoutFunction)
+                self.element.Measure(Size(width, Double.PositiveInfinity))
+                // note that DesiredSize includes padding, so we have to subtract it to
+                // measure the content only.
+                let widthWithPadding, heightWithPadding = self.element.DesiredSize |> Convert.size
+                let paddingH = self.layout.GetPadding(SpacingType.Left) + self.layout.GetPadding(SpacingType.Right) |> float
+                let paddingV = self.layout.GetPadding(SpacingType.Top) + self.layout.GetPadding(SpacingType.Bottom) |> float
+                let paddingH = if Double.IsNaN(paddingH) then 0. else paddingH
+                let paddingV = if Double.IsNaN(paddingV) then 0. else paddingV
+                max (widthWithPadding - paddingH) 0., max (heightWithPadding - paddingV) 0.
+
+            self.layout.setMeasure (SizeThatFits layoutFunction)
 
     type Control<'element when 'element :> FrameworkElement>(element: 'element, layout: Layout) =
         inherit Control(element, layout)
@@ -235,6 +243,8 @@ module WPF =
         let constructor'() = 
             let button = Button()
             let control = createControl button
+            control.layout.SetPadding(SpacingType.Horizontal, 10.f);
+            control.layout.SetPadding(SpacingType.Vertical, 5.f);
             control.useSizeThatFits()
             control
 
@@ -250,10 +260,16 @@ module WPF =
                     this.layout.MarkDirty()
 
             |> mounter --
-                fun this (Image source) ->
-                    this.element.Content <- loadImage source
+                fun self (Image source) ->
+                    self.element.Content <- loadImage source
                     fun () -> 
-                        this.element.Content <- null
+                        self.element.Content <- null
+
+            |> mounter --
+                fun self (UI.ContentSize (w, h)) ->
+                    self.layout.setMeasure (ContentSize (w, h))
+                    fun () ->
+                        self.useSizeThatFits()
 
             |> eventMounter -- fun this (OnClick e) -> e, this.element.Click
             |> materialize

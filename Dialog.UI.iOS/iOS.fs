@@ -266,7 +266,7 @@ module iOS =
         let construct() = 
             let slider = new UISlider()
             let control = createControl slider
-            control.layout.setMeasure (MinimumSize sliderDefaultSize)
+            control.layout.setMeasure (ContentSize sliderDefaultSize)
             control
 
         let accessor = 

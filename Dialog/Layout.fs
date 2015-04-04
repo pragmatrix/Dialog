@@ -130,7 +130,7 @@ module Layout =
 
     type Measure = 
         | SizeThatFits of (float -> float * float)
-        | MinimumSize of float * float
+        | ContentSize of float * float
 
     type Layout(setFrame: Rect -> unit) =
         inherit CSSNode()
@@ -196,7 +196,7 @@ module Layout =
                 fun _ width ->
                     let (w, h) = sizeOfWidth (width |> float)
                     MeasureOutput(w |> float32, h |> float32)
-            | MinimumSize (width, height) ->
+            | ContentSize (width, height) ->
                 this.MeasureFunction <-
                 fun _ _ ->
                     MeasureOutput(width |> float32, height |> float32)

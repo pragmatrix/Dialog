@@ -187,6 +187,11 @@ module UI =
     type Width = Width of float 
     type Height = Height of float
 
+    // If a control has a specific, separated content (like an image button),
+    // then it should the following property
+
+    type ContentSize = ContentSize of float * float
+
     let render = Core.render
 
     let controlType = Define.ServiceType("Control")
