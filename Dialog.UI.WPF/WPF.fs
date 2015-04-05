@@ -62,8 +62,8 @@ module WPF =
                 // note that DesiredSize includes padding, so we have to subtract it to
                 // measure the content only.
                 let widthWithPadding, heightWithPadding = self.element.DesiredSize |> Convert.size
-                let paddingH = self.layout.GetPadding(SpacingType.Left) + self.layout.GetPadding(SpacingType.Right) |> float
-                let paddingV = self.layout.GetPadding(SpacingType.Top) + self.layout.GetPadding(SpacingType.Bottom) |> float
+                let paddingH = self.layout.GetEffectivePadding(SpacingType.Left) + self.layout.GetEffectivePadding(SpacingType.Right) |> float
+                let paddingV = self.layout.GetEffectivePadding(SpacingType.Top) + self.layout.GetEffectivePadding(SpacingType.Bottom) |> float
                 let paddingH = if Double.IsNaN(paddingH) then 0. else paddingH
                 let paddingV = if Double.IsNaN(paddingV) then 0. else paddingV
                 max (widthWithPadding - paddingH) 0., max (heightWithPadding - paddingV) 0.
