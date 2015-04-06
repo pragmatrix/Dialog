@@ -14,6 +14,7 @@ open Dialog.PropertyAccessor
 open Dialog.Layout
 open Facebook.CSSLayout
 
+open MahApps.Metro
 
 module WPF = 
   
@@ -95,6 +96,7 @@ module WPF =
             _layout.removeNested control.layout
 
     let mkHandler handler = RoutedEventHandler handler
+    let mkHandler2 handler = EventHandler handler
     let mkEvent target msg reference = { message = msg; props = []; sender = reference }
 
     
@@ -127,7 +129,16 @@ module WPF =
         accessor
         |> reader -- fun this -> (get this) |> Convert.color |> BackgroundColor
         |> writer -- fun this (BackgroundColor color) -> set this (Convert.toBrush color)
-                            
+
+    let eventMounter2 f accessor = 
+        accessor
+        |> eventMounter --
+            fun this accessor e ->
+                let (comp, msg), (e:IEvent<_, _>) = f this e
+                let handler = mkHandler2 -- fun _ _ -> Events.dispatchEvent comp -- mkEvent this msg accessor
+                e.AddHandler handler
+                fun () -> e.RemoveHandler handler
+                                       
     let eventMounter f accessor = 
         accessor
         |> eventMounter --
@@ -278,6 +289,28 @@ module WPF =
             .Constructor(constructor')
             .PropertyAccessor(buttonAccessor)
 
+    let switchService = 
+        let construct() =
+            let switch = new Controls.ToggleSwitch()
+            switch.OffLabel <- ""
+            switch.OnLabel <- ""
+            let control = createControl switch
+            control.useSizeThatFits()
+            control
+
+        let accessor = 
+            accessorFor<Control<Controls.ToggleSwitch>>
+            |> extend controlAccessor
+            |> controlProperties -- fun c -> c.element :> FrameworkElement
+            |> reader -- fun this -> Switch.fromBoolean this.element.IsChecked.Value
+            |> writer -- fun this (sw:Switch) -> this.element.IsChecked <- Nullable(sw.Boolean)
+            |> eventMounter2 -- fun this (OnChanged e) -> e, this.element.IsCheckedChanged
+            |> materialize
+
+        controlClassPrototype()
+            .Constructor(construct)
+            .PropertyAccessor(accessor)
+
     let private dispatchEventAndUpdate (root: MountedRoot) (comp : Component) event = 
         comp.dispatchEvent event
         root.update()
@@ -335,5 +368,7 @@ module WPF =
     UI.imageService.register imageService.Instantiate
 
     UI.buttonService.register buttonService.Instantiate
+    UI.switchService.register switchService.Instantiate
 
     UI.viewService.register viewService.Instantiate
+   
