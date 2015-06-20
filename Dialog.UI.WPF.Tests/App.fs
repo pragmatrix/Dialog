@@ -72,8 +72,8 @@ let standardControls =
                 group "controls"
                 present "button" button
                 present "imageButton" imageButton
-(*
                 present "switch" switch
+(*
                 present "slider" slider
                 present "stepper" stepper
                 present "segmented" segmented
