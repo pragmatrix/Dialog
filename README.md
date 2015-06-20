@@ -1,5 +1,7 @@
 # Dialog
 
+> **Update:** Because of the extensive work that seems to be required to support a number different platforms, and the missing live programming properties of Dialog, I decided to stop development in favor of a new library that implements a live application programming system and a portable user interface based on the concepts I've learned here.
+
 Declarative, code-driven user interfaces and applications in F#. Inspired by [React](http://facebook.github.io/react/).
 
 License will be BSD.
